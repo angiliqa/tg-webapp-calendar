@@ -18,16 +18,29 @@
       --accent-grad: linear-gradient(0.25turn, rgba(96,211,147,1) 0%, rgba(99,213,236,1) 100%);
     }
     *{ box-sizing: border-box; }
-    body{ margin:0; padding:20px; background:var(--bg); color:var(--text);
-          font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-    .card{ background:var(--card); border-radius:var(--radius-xl); padding:18px;
-           max-width:760px; margin:0 auto; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+    body{
+      margin:0; padding:20px; background:var(--bg); color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+    .card{
+      background:var(--card); border-radius:var(--radius-xl); padding:18px;
+      max-width:760px; margin:0 auto; box-shadow:0 1px 4px rgba(0,0,0,.06);
+    }
     h1{ font-size:24px; margin:0 0 16px; }
     label{ display:block; font-size:18px; margin:8px 0; }
 
-    .row{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
-    select{ flex:1 1 180px; padding:12px 14px; border:1px solid var(--stroke);
-            border-radius:var(--radius); font-size:16px; background:#fff; }
+    .row{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+    .row.nav{ justify-content:space-between; }
+    select{
+      flex:1 1 180px; padding:12px 14px; border:1px solid var(--stroke);
+      border-radius:var(--radius); font-size:16px; background:#fff;
+    }
+    .arrow{
+      width:44px; height:44px; border:1px solid var(--stroke); border-radius:12px;
+      background:#fff; font-size:22px; line-height:1; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      user-select:none;
+    }
 
     .grid{ display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; }
     .dow{ text-align:center; font-size:14px; color:var(--muted); margin-top:4px; }
@@ -44,7 +57,8 @@
 
     .btn{
       width:100%; margin-top:16px; padding:14px 16px; border:0; border-radius:14px;
-      font-size:17px; color:#0b1520; background:var(--accent-grad); cursor:pointer;
+      font-size:17px; font-weight:600; color:#fff;              /* белый текст */
+      background:var(--accent-grad); cursor:pointer;
       box-shadow:0 6px 16px rgba(99,213,236,.25);
     }
     .btn:disabled{ opacity:.5; cursor:not-allowed; }
@@ -61,10 +75,12 @@
     <h1>Выберите дату тура</h1>
     <label>Дата</label>
 
-    <!-- выпадающие списки: 12 месяцев + годы рядом -->
-    <div class="row">
+    <!-- навигация: стрелки + выпадающие списки -->
+    <div class="row nav">
+      <button class="arrow" id="prev" aria-label="Предыдущий месяц">‹</button>
       <select id="month"></select>
       <select id="year"></select>
+      <button class="arrow" id="next" aria-label="Следующий месяц">›</button>
     </div>
 
     <!-- дни недели -->
@@ -79,9 +95,9 @@
   <script>
     const tg = window.Telegram.WebApp;
     tg.expand(); tg.ready();
-    tg.MainButton.hide(); // используем свою кнопку с градиентом
+    tg.MainButton.hide(); // используем свою кнопку
 
-    // ------- константы и состояние -------
+    // ===== модель и константы =====
     const RU_MONTHS = [
       "Январь","Февраль","Март","Апрель","Май","Июнь",
       "Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"
@@ -89,17 +105,19 @@
     const DOW = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
     const now = new Date();
     const currentYear = now.getFullYear();
-    const years = [currentYear, currentYear+1, currentYear+2]; // 2 года вперёд
+    const years = [currentYear, currentYear+1, currentYear+2]; // два года вперёд
 
     const sel = { y: currentYear, m: now.getMonth(), d: now.getDate() };
 
     const monthEl = document.getElementById('month');
     const yearEl  = document.getElementById('year');
+    const prevBtn = document.getElementById('prev');
+    const nextBtn = document.getElementById('next');
     const dowEl   = document.getElementById('dow');
     const daysEl  = document.getElementById('days');
     const btn     = document.getElementById('submit');
 
-    // ----- заполнить шапку дней недели -----
+    // ===== отрисовка =====
     function renderDOW(){
       dowEl.innerHTML = "";
       DOW.forEach(n => {
@@ -109,25 +127,14 @@
         dowEl.appendChild(div);
       });
     }
-
-    // ----- заполнить селекты -----
     function fillSelects(){
       monthEl.innerHTML = RU_MONTHS.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
       yearEl.innerHTML  = years.map(y=>`<option value="${y}">${y}</option>`).join('');
       monthEl.value = sel.m;
       yearEl.value  = sel.y;
     }
-
-    // ----- отрисовать сетку дней -----
     function daysInMonth(y,m){ return new Date(y, m+1, 0).getDate(); }
-    function firstWeekdayIndex(y,m){ // Пн=0 .. Вс=6
-      let w = new Date(y,m,1).getDay(); // Вс=0
-      return (w+6)%7;
-    }
-
-    function sameDate(y,m,d, dateObj){
-      return dateObj.getFullYear()===y && dateObj.getMonth()===m && dateObj.getDate()===d;
-    }
+    function firstWeekdayIndex(y,m){ let w=new Date(y,m,1).getDay(); return (w+6)%7; } // Пн=0..Вс=6
 
     function renderDays(){
       daysEl.innerHTML = "";
@@ -135,21 +142,18 @@
       const blanks = firstWeekdayIndex(y,m);
       const count = daysInMonth(y,m);
 
-      // пустые ячейки до первого дня
+      // пустые ячейки до 1-го числа
       for(let i=0;i<blanks;i++){
         const e = document.createElement('div');
         e.className = 'day empty';
         daysEl.appendChild(e);
       }
-
+      // сами дни
       for(let d=1; d<=count; d++){
         const e = document.createElement('div');
         e.className = 'day';
         e.textContent = d;
-
-        // выделить выбранную
         if (sel.y===y && sel.m===m && sel.d===d) e.classList.add('selected');
-
         e.onclick = ()=>{
           sel.y = y; sel.m = m; sel.d = d;
           Array.from(daysEl.children).forEach(c=>c.classList.remove('selected'));
@@ -160,20 +164,38 @@
       }
     }
 
-    // ----- начальная отрисовка -----
+    // ===== навигация стрелками =====
+    function shiftMonth(delta){
+      let y = Number(yearEl.value);
+      let m = Number(monthEl.value) + delta;
+
+      if (m < 0){ m = 11; y -= 1; }
+      if (m > 11){ m = 0;  y += 1; }
+
+      const minY = years[0], maxY = years[years.length-1];
+      if (y < minY){ y = minY; m = 0; }
+      if (y > maxY){ y = maxY; m = 11; }
+
+      yearEl.value  = y;
+      monthEl.value = m;
+      renderDays();
+    }
+
+    // ===== инициализация =====
     renderDOW();
     fillSelects();
     renderDays();
 
-    monthEl.onchange = ()=>{ renderDays(); };
-    yearEl.onchange  = ()=>{ renderDays(); };
+    monthEl.onchange = ()=> renderDays();
+    yearEl.onchange  = ()=> renderDays();
+    prevBtn.onclick  = ()=> shiftMonth(-1);
+    nextBtn.onclick  = ()=> shiftMonth(1);
 
-    // ----- отправка в бота -----
+    // ===== отправка в бота =====
     function toISO(y,m,d){
-      const dt = new Date(Date.UTC(y, m, d)); // UTC, чтобы не ездило по TZ
-      return dt.toISOString().slice(0,10); // YYYY-MM-DD
+      const dt = new Date(Date.UTC(y, m, d)); // UTC, чтобы не «плавало»
+      return dt.toISOString().slice(0,10);
     }
-
     btn.onclick = ()=>{
       if (!sel.d) return;
       const iso = toISO(sel.y, sel.m, sel.d);
