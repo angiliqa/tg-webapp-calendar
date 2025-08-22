@@ -1,137 +1,184 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Выбор даты</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <!-- Flatpickr -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
-
   <style>
     :root{
-      --card-bg: var(--tg-theme-secondary-bg-color, #fff);
+      --bg: var(--tg-theme-bg-color, #f6f7f9);
+      --card: var(--tg-theme-secondary-bg-color, #fff);
       --text: var(--tg-theme-text-color, #111);
       --muted: var(--tg-theme-hint-color, #6b7280);
       --stroke: rgba(0,0,0,.12);
       --radius-xl: 22px;
       --radius: 14px;
+      --selected: #E6EBF5; /* цвет выбранной даты */
+      --accent-grad: linear-gradient(0.25turn, rgba(96,211,147,1) 0%, rgba(99,213,236,1) 100%);
     }
     *{ box-sizing: border-box; }
-    body{
-      margin:0; padding:20px;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      color: var(--text);
-      background: var(--tg-theme-bg-color, #f6f7f9);
-    }
-    .card{
-      background: var(--card-bg);
-      border-radius: var(--radius-xl);
-      padding: 18px 18px 14px;
-      box-shadow: 0 1px 4px rgba(0,0,0,.06);
-      overflow: hidden; /* чтобы внутренности не вылазили за скругление */
-      max-width: 680px; margin: 0 auto;
-    }
-    h1{ font-size: 24px; line-height: 1.25; margin: 0 0 16px; }
-    label{ display:block; font-size:18px; margin: 4px 0 8px; }
-    /* поле – внутри не вылезает за края */
-    input[type="text"].date-input{
-      width: 100%;
-      padding: 14px 16px;
-      border: 1px solid var(--stroke);
-      border-radius: var(--radius);
-      font-size: 18px;
-      line-height: 1.2;
-      background: #fff;
-    }
-    .muted{ font-size: 15px; color: var(--muted); margin-top: 12px; }
+    body{ margin:0; padding:20px; background:var(--bg); color:var(--text);
+          font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    .card{ background:var(--card); border-radius:var(--radius-xl); padding:18px;
+           max-width:760px; margin:0 auto; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+    h1{ font-size:24px; margin:0 0 16px; }
+    label{ display:block; font-size:18px; margin:8px 0; }
 
-    /* СДЕЛАТЬ КАЛЕНДАРЬ КРУПНЫМ */
-    .flatpickr-calendar{
-      font-size: 16px;          /* базовый размер */
-      border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0,0,0,.15);
-    }
-    .flatpickr-days{ border-radius: 12px; }
-    .flatpickr-day{ height: 42px; line-height: 42px; } /* крупные ячейки */
-    .flatpickr-months .flatpickr-month{ height: 48px; }
-    .flatpickr-current-month .cur-month, 
-    .flatpickr-current-month .numInputWrapper input{
-      font-size: 18px;
-    }
+    .row{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+    select{ flex:1 1 180px; padding:12px 14px; border:1px solid var(--stroke);
+            border-radius:var(--radius); font-size:16px; background:#fff; }
 
-    /* на узких экранах добавим небольшие отступы */
-    @media (max-width: 420px){
-      body{ padding: 14px; }
-      h1{ font-size: 22px; }
-      .flatpickr-day{ height: 38px; line-height: 38px; }
+    .grid{ display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; }
+    .dow{ text-align:center; font-size:14px; color:var(--muted); margin-top:4px; }
+    .day{
+      text-align:center; padding:12px 0; border:1px solid var(--stroke);
+      border-radius:12px; background:#fff; font-size:16px; cursor:pointer;
+      user-select:none;
+    }
+    .day.empty{ visibility:hidden; }
+    .day.disabled{ opacity:.4; pointer-events:none; }
+    .day.selected{ background:var(--selected); border-color:var(--selected); }
+
+    .muted{ font-size:15px; color:var(--muted); margin-top:12px; }
+
+    .btn{
+      width:100%; margin-top:16px; padding:14px 16px; border:0; border-radius:14px;
+      font-size:17px; color:#0b1520; background:var(--accent-grad); cursor:pointer;
+      box-shadow:0 6px 16px rgba(99,213,236,.25);
+    }
+    .btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+    @media (max-width:420px){
+      body{ padding:14px; }
+      h1{ font-size:22px; }
+      .day{ padding:10px 0; }
     }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>Выберите дату тура</h1>
-    <label for="date">Дата</label>
-    <!-- это текстовое поле под Flatpickr -->
-    <input id="date" class="date-input" type="text" placeholder="дд.мм.гггг" readonly />
-    <div class="muted">Нажмите «Готово» внизу, чтобы подтвердить.</div>
+    <label>Дата</label>
+
+    <!-- выпадающие списки: 12 месяцев + годы рядом -->
+    <div class="row">
+      <select id="month"></select>
+      <select id="year"></select>
+    </div>
+
+    <!-- дни недели -->
+    <div class="grid" id="dow"></div>
+    <!-- сетка дней -->
+    <div class="grid" id="days"></div>
+
+    <div class="muted">Нажмите «Готово» ниже, чтобы подтвердить.</div>
+    <button id="submit" class="btn" disabled>Готово</button>
   </div>
 
   <script>
     const tg = window.Telegram.WebApp;
-    tg.expand();
-    tg.ready();
+    tg.expand(); tg.ready();
+    tg.MainButton.hide(); // используем свою кнопку с градиентом
 
-    // Основная кнопка Telegram
-    tg.MainButton.setText('Готово');
-    tg.MainButton.show();
-    tg.MainButton.disable();
+    // ------- константы и состояние -------
+    const RU_MONTHS = [
+      "Январь","Февраль","Март","Апрель","Май","Июнь",
+      "Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"
+    ];
+    const DOW = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const years = [currentYear, currentYear+1, currentYear+2]; // 2 года вперёд
 
-    // Диапазон: сегодня .. +365 дней
-    const today = new Date();
-    const max = new Date(today);
-    max.setDate(max.getDate() + 365);
+    const sel = { y: currentYear, m: now.getMonth(), d: now.getDate() };
 
-    // Инициализация Flatpickr (всегда кастомный календарь, даже на iOS)
-    const input = document.getElementById('date');
-    const fp = flatpickr(input, {
-      locale: 'ru',
-      disableMobile: true,
-      dateFormat: 'd.m.Y',           // что видит пользователь
-      defaultDate: today,            // можно убрать, если без авто-даты
-      minDate: today,
-      maxDate: max,
-      position: 'auto center',
-      static: false,                 // всплывающее окно
-      onReady: (sel, str, inst) => {
-        // Откроем календарь сразу, чтобы не нужно было нажимать поле
-        setTimeout(() => inst.open(), 50);
-      },
-      onChange: (selectedDates) => {
-        if (selectedDates && selectedDates[0]) {
-          tg.MainButton.enable();
-          // Запомним ISO для отправки в бота (локальная дата без сдвига часового пояса)
-          const d = selectedDates[0];
-          const iso = new Date(d.getTime() - d.getTimezoneOffset()*60000)
-                        .toISOString().slice(0,10); // YYYY-MM-DD
-          input.dataset.iso = iso;
-        } else {
-          tg.MainButton.disable();
-          delete input.dataset.iso;
-        }
+    const monthEl = document.getElementById('month');
+    const yearEl  = document.getElementById('year');
+    const dowEl   = document.getElementById('dow');
+    const daysEl  = document.getElementById('days');
+    const btn     = document.getElementById('submit');
+
+    // ----- заполнить шапку дней недели -----
+    function renderDOW(){
+      dowEl.innerHTML = "";
+      DOW.forEach(n => {
+        const div = document.createElement('div');
+        div.className = 'dow';
+        div.textContent = n;
+        dowEl.appendChild(div);
+      });
+    }
+
+    // ----- заполнить селекты -----
+    function fillSelects(){
+      monthEl.innerHTML = RU_MONTHS.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+      yearEl.innerHTML  = years.map(y=>`<option value="${y}">${y}</option>`).join('');
+      monthEl.value = sel.m;
+      yearEl.value  = sel.y;
+    }
+
+    // ----- отрисовать сетку дней -----
+    function daysInMonth(y,m){ return new Date(y, m+1, 0).getDate(); }
+    function firstWeekdayIndex(y,m){ // Пн=0 .. Вс=6
+      let w = new Date(y,m,1).getDay(); // Вс=0
+      return (w+6)%7;
+    }
+
+    function sameDate(y,m,d, dateObj){
+      return dateObj.getFullYear()===y && dateObj.getMonth()===m && dateObj.getDate()===d;
+    }
+
+    function renderDays(){
+      daysEl.innerHTML = "";
+      const y = +yearEl.value, m = +monthEl.value;
+      const blanks = firstWeekdayIndex(y,m);
+      const count = daysInMonth(y,m);
+
+      // пустые ячейки до первого дня
+      for(let i=0;i<blanks;i++){
+        const e = document.createElement('div');
+        e.className = 'day empty';
+        daysEl.appendChild(e);
       }
-    });
 
-    // Отправка данных в бота
-    tg.MainButton.onClick(() => {
-      const iso = input.dataset.iso;
-      if (!iso) { tg.showAlert('Выберите дату'); return; }
-      const payload = { date: iso };  // n8n ждёт поле date в ISO
-      tg.sendData(JSON.stringify(payload));
-    });
+      for(let d=1; d<=count; d++){
+        const e = document.createElement('div');
+        e.className = 'day';
+        e.textContent = d;
+
+        // выделить выбранную
+        if (sel.y===y && sel.m===m && sel.d===d) e.classList.add('selected');
+
+        e.onclick = ()=>{
+          sel.y = y; sel.m = m; sel.d = d;
+          Array.from(daysEl.children).forEach(c=>c.classList.remove('selected'));
+          e.classList.add('selected');
+          btn.disabled = false;
+        };
+        daysEl.appendChild(e);
+      }
+    }
+
+    // ----- начальная отрисовка -----
+    renderDOW();
+    fillSelects();
+    renderDays();
+
+    monthEl.onchange = ()=>{ renderDays(); };
+    yearEl.onchange  = ()=>{ renderDays(); };
+
+    // ----- отправка в бота -----
+    function toISO(y,m,d){
+      const dt = new Date(Date.UTC(y, m, d)); // UTC, чтобы не ездило по TZ
+      return dt.toISOString().slice(0,10); // YYYY-MM-DD
+    }
+
+    btn.onclick = ()=>{
+      if (!sel.d) return;
+      const iso = toISO(sel.y, sel.m, sel.d);
+      tg.sendData(JSON.stringify({ date: iso }));
+    };
   </script>
 </body>
 </html>
