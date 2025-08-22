@@ -2,18 +2,16 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Выбор даты</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    :root { color-scheme: light dark; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; padding: 20px;
-           background: var(--tg-theme-bg-color, #f7f7f7); color: var(--tg-theme-text-color, #111); }
-    .card { background: var(--tg-theme-secondary-bg-color, #fff); border-radius: 16px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
-    h1 { font-size: 18px; margin: 0 0 12px; }
-    label { display:block; margin-bottom: 8px; font-size: 14px; opacity:.9; }
-    input[type="date"] { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,.15); font-size: 16px; }
-    .muted { font-size: 12px; opacity: .7; margin-top: 8px; }
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,sans-serif; margin:0; padding:20px; }
+    .card { background:#fff; border-radius:16px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+    h1 { font-size:18px; margin:0 0 12px; }
+    label { display:block; margin:8px 0 6px; font-size:14px; opacity:.85; }
+    input[type="date"] { width:100%; padding:12px; border-radius:12px; border:1px solid rgba(0,0,0,.15); font-size:16px; }
+    .muted { font-size:12px; opacity:.7; margin-top:8px; }
   </style>
 </head>
 <body>
@@ -26,30 +24,41 @@
 
   <script>
     const tg = window.Telegram.WebApp;
-    tg.expand();
-    tg.ready();
+    tg.expand();           // развернуть на максимум
+    tg.ready();            // сказать клиенту, что всё загружено
 
-    tg.MainButton.setText("Готово");
+    // оформить и показать основную кнопку
+    tg.MainButton.setText('Готово');
     tg.MainButton.show();
-    tg.MainButton.disable();
+    tg.MainButton.disable(); // пока дата не выбрана
 
+    // ограничить диапазон дат (сегодня .. +2 месяца)
     const input = document.getElementById('date');
-
     const today = new Date();
-    const min = new Date(today);
     const max = new Date(today); max.setMonth(max.getMonth() + 2);
     const toISO = d => d.toISOString().slice(0,10);
-    input.min = toISO(min);
+    input.min = toISO(today);
     input.max = toISO(max);
 
-    input.addEventListener('change', () => {
+    // включаем кнопку, когда есть значение
+    function updateBtn() {
       if (input.value) tg.MainButton.enable(); else tg.MainButton.disable();
+    }
+    input.addEventListener('input', updateBtn);
+    input.addEventListener('change', updateBtn);
+
+    // клин на кнопку — отправляем данные в бота
+    tg.MainButton.onClick(() => {
+      const payload = { date: input.value }; // YYYY-MM-DD
+      if (!payload.date) { tg.showAlert('Выберите дату'); return; }
+      tg.sendData(JSON.stringify(payload));
+      // опционально показать всплывашку
+      // tg.showAlert('Отправлено: ' + payload.date);
     });
 
-    tg.MainButton.onClick(() => {
-      const payload = { type: "date", date: input.value }; // YYYY-MM-DD
-      tg.sendData(JSON.stringify(payload));
-    });
+    // Тёмная/светлая тема из Telegram (не обязательно)
+    // tg.setHeaderColor('secondary_bg_color');
+    // tg.setBackgroundColor('secondary_bg_color');
   </script>
 </body>
 </html>
