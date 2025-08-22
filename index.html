@@ -14,10 +14,11 @@
       --stroke: rgba(0,0,0,.12);
       --radius-xl: 22px;
       --radius: 14px;
-      --selected: #E6EBF5; /* цвет выбранной даты */
+      --ctl-h: 48px;                       /* ЕДИНАЯ ВЫСОТА контролов */
+      --selected: #E6EBF5;                 /* цвет выбранной даты */
       --accent-grad: linear-gradient(0.25turn, rgba(96,211,147,1) 0%, rgba(99,213,236,1) 100%);
     }
-    *{ box-sizing: border-box; }
+    *{ box-sizing:border-box; }
     body{
       margin:0; padding:20px; background:var(--bg); color:var(--text);
       font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
@@ -27,46 +28,56 @@
       max-width:760px; margin:0 auto; box-shadow:0 1px 4px rgba(0,0,0,.06);
     }
     h1{ font-size:24px; margin:0 0 16px; }
-    label{ display:block; font-size:18px; margin:8px 0; }
+    label{ display:block; font-size:18px; margin:6px 0 10px; }
 
-    .row{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
-    .row.nav{ justify-content:space-between; }
-    select{
-      flex:1 1 180px; padding:12px 14px; border:1px solid var(--stroke);
-      border-radius:var(--radius); font-size:16px; background:#fff;
+    /* ЕДИНЫЙ КОНТРОЛ: стрелка — селект — стрелка */
+    .control{
+      display:grid;
+      grid-template-columns: var(--ctl-h) 1fr var(--ctl-h);
+      gap:12px;
+      margin-bottom:10px;
+      align-items:center;
     }
     .arrow{
-      width:44px; height:44px; border:1px solid var(--stroke); border-radius:12px;
-      background:#fff; font-size:22px; line-height:1; cursor:pointer;
+      height:var(--ctl-h); width:var(--ctl-h);
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      background:#fff;
+      font-size:22px; line-height:1;
       display:flex; align-items:center; justify-content:center;
-      user-select:none;
+      cursor:pointer; user-select:none;
+    }
+    select{
+      height:var(--ctl-h);
+      padding:0 14px;
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      font-size:16px; background:#fff;
+      appearance:auto;
     }
 
-    .grid{ display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; }
-    .dow{ text-align:center; font-size:14px; color:var(--muted); margin-top:4px; }
+    .grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
+    .dow{ text-align:center; font-size:14px; color:var(--muted); margin-top:6px; }
     .day{
       text-align:center; padding:12px 0; border:1px solid var(--stroke);
       border-radius:12px; background:#fff; font-size:16px; cursor:pointer;
       user-select:none;
     }
     .day.empty{ visibility:hidden; }
-    .day.disabled{ opacity:.4; pointer-events:none; }
     .day.selected{ background:var(--selected); border-color:var(--selected); }
 
     .muted{ font-size:15px; color:var(--muted); margin-top:12px; }
-
     .btn{
       width:100%; margin-top:16px; padding:14px 16px; border:0; border-radius:14px;
-      font-size:17px; font-weight:600; color:#fff;              /* белый текст */
-      background:var(--accent-grad); cursor:pointer;
-      box-shadow:0 6px 16px rgba(99,213,236,.25);
+      font-size:17px; font-weight:600; color:#fff; background:var(--accent-grad);
+      cursor:pointer; box-shadow:0 6px 16px rgba(99,213,236,.25);
     }
     .btn:disabled{ opacity:.5; cursor:not-allowed; }
 
     @media (max-width:420px){
       body{ padding:14px; }
       h1{ font-size:22px; }
-      .day{ padding:10px 0; }
+      :root{ --ctl-h: 44px; }
     }
   </style>
 </head>
@@ -75,17 +86,22 @@
     <h1>Выберите дату тура</h1>
     <label>Дата</label>
 
-    <!-- навигация: стрелки + выпадающие списки -->
-    <div class="row nav">
-      <button class="arrow" id="prev" aria-label="Предыдущий месяц">‹</button>
+    <!-- Ряд 1: МЕСЯЦ (стрелка — селект — стрелка) -->
+    <div class="control">
+      <button class="arrow" id="m-prev" aria-label="Предыдущий месяц">‹</button>
       <select id="month"></select>
-      <select id="year"></select>
-      <button class="arrow" id="next" aria-label="Следующий месяц">›</button>
+      <button class="arrow" id="m-next" aria-label="Следующий месяц">›</button>
     </div>
 
-    <!-- дни недели -->
+    <!-- Ряд 2: ГОД (стрелка — селект — стрелка) -->
+    <div class="control">
+      <button class="arrow" id="y-prev" aria-label="Предыдущий год">‹</button>
+      <select id="year"></select>
+      <button class="arrow" id="y-next" aria-label="Следующий год">›</button>
+    </div>
+
+    <!-- Дни недели и сетка -->
     <div class="grid" id="dow"></div>
-    <!-- сетка дней -->
     <div class="grid" id="days"></div>
 
     <div class="muted">Нажмите «Готово» ниже, чтобы подтвердить.</div>
@@ -94,30 +110,27 @@
 
   <script>
     const tg = window.Telegram.WebApp;
-    tg.expand(); tg.ready();
-    tg.MainButton.hide(); // используем свою кнопку
+    tg.expand(); tg.ready(); tg.MainButton.hide();
 
-    // ===== модель и константы =====
-    const RU_MONTHS = [
-      "Январь","Февраль","Март","Апрель","Май","Июнь",
-      "Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"
-    ];
+    const RU_MONTHS = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
     const DOW = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
+
     const now = new Date();
     const currentYear = now.getFullYear();
-    const years = [currentYear, currentYear+1, currentYear+2]; // два года вперёд
+    const years = [currentYear, currentYear+1, currentYear+2]; // 2 года вперёд
 
-    const sel = { y: currentYear, m: now.getMonth(), d: now.getDate() };
+    const sel = { y: currentYear, m: now.getMonth(), d: null }; // без предвыбора
 
     const monthEl = document.getElementById('month');
     const yearEl  = document.getElementById('year');
-    const prevBtn = document.getElementById('prev');
-    const nextBtn = document.getElementById('next');
+    const mPrev   = document.getElementById('m-prev');
+    const mNext   = document.getElementById('m-next');
+    const yPrev   = document.getElementById('y-prev');
+    const yNext   = document.getElementById('y-next');
     const dowEl   = document.getElementById('dow');
     const daysEl  = document.getElementById('days');
     const btn     = document.getElementById('submit');
 
-    // ===== отрисовка =====
     function renderDOW(){
       dowEl.innerHTML = "";
       DOW.forEach(n => {
@@ -130,11 +143,10 @@
     function fillSelects(){
       monthEl.innerHTML = RU_MONTHS.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
       yearEl.innerHTML  = years.map(y=>`<option value="${y}">${y}</option>`).join('');
-      monthEl.value = sel.m;
-      yearEl.value  = sel.y;
+      monthEl.value = sel.m; yearEl.value = sel.y;
     }
-    function daysInMonth(y,m){ return new Date(y, m+1, 0).getDate(); }
-    function firstWeekdayIndex(y,m){ let w=new Date(y,m,1).getDay(); return (w+6)%7; } // Пн=0..Вс=6
+    const daysInMonth=(y,m)=> new Date(y, m+1, 0).getDate();
+    const firstWeekdayIndex=(y,m)=> (new Date(y,m,1).getDay()+6)%7; // Пн=0..Вс=6
 
     function renderDays(){
       daysEl.innerHTML = "";
@@ -142,62 +154,52 @@
       const blanks = firstWeekdayIndex(y,m);
       const count = daysInMonth(y,m);
 
-      // пустые ячейки до 1-го числа
       for(let i=0;i<blanks;i++){
-        const e = document.createElement('div');
-        e.className = 'day empty';
-        daysEl.appendChild(e);
+        const e = document.createElement('div'); e.className='day empty'; daysEl.appendChild(e);
       }
-      // сами дни
       for(let d=1; d<=count; d++){
-        const e = document.createElement('div');
-        e.className = 'day';
-        e.textContent = d;
+        const e = document.createElement('div'); e.className='day'; e.textContent=d;
         if (sel.y===y && sel.m===m && sel.d===d) e.classList.add('selected');
         e.onclick = ()=>{
-          sel.y = y; sel.m = m; sel.d = d;
+          sel.y=y; sel.m=m; sel.d=d;
           Array.from(daysEl.children).forEach(c=>c.classList.remove('selected'));
           e.classList.add('selected');
-          btn.disabled = false;
+          btn.disabled=false;
         };
         daysEl.appendChild(e);
       }
     }
 
-    // ===== навигация стрелками =====
+    // перелистывание месяца
     function shiftMonth(delta){
       let y = Number(yearEl.value);
       let m = Number(monthEl.value) + delta;
-
-      if (m < 0){ m = 11; y -= 1; }
-      if (m > 11){ m = 0;  y += 1; }
-
-      const minY = years[0], maxY = years[years.length-1];
-      if (y < minY){ y = minY; m = 0; }
-      if (y > maxY){ y = maxY; m = 11; }
-
-      yearEl.value  = y;
-      monthEl.value = m;
-      renderDays();
+      if (m<0){ m=11; y--; }
+      if (m>11){ m=0;  y++; }
+      // удерживаем в разрешённых годах
+      const minY=years[0], maxY=years[years.length-1];
+      if (y<minY){ y=minY; m=0; }
+      if (y>maxY){ y=maxY; m=11; }
+      yearEl.value=y; monthEl.value=m; renderDays();
+    }
+    // перелистывание года
+    function shiftYear(delta){
+      let y = Number(yearEl.value) + delta;
+      const minY=years[0], maxY=years[years.length-1];
+      if (y<minY) y=minY;
+      if (y>maxY) y=maxY;
+      yearEl.value=y; renderDays();
     }
 
-    // ===== инициализация =====
-    renderDOW();
-    fillSelects();
-    renderDays();
+    // init
+    renderDOW(); fillSelects(); renderDays();
+    monthEl.onchange=renderDays; yearEl.onchange=renderDays;
+    mPrev.onclick=()=>shiftMonth(-1); mNext.onclick=()=>shiftMonth(1);
+    yPrev.onclick=()=>shiftYear(-1);  yNext.onclick=()=>shiftYear(1);
 
-    monthEl.onchange = ()=> renderDays();
-    yearEl.onchange  = ()=> renderDays();
-    prevBtn.onclick  = ()=> shiftMonth(-1);
-    nextBtn.onclick  = ()=> shiftMonth(1);
-
-    // ===== отправка в бота =====
-    function toISO(y,m,d){
-      const dt = new Date(Date.UTC(y, m, d)); // UTC, чтобы не «плавало»
-      return dt.toISOString().slice(0,10);
-    }
-    btn.onclick = ()=>{
-      if (!sel.d) return;
+    function toISO(y,m,d){ return new Date(Date.UTC(y,m,d)).toISOString().slice(0,10); }
+    btn.onclick=()=>{
+      if(!sel.d) return;
       const iso = toISO(sel.y, sel.m, sel.d);
       tg.sendData(JSON.stringify({ date: iso }));
     };
