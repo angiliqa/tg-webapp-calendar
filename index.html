@@ -2,63 +2,136 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Выбор даты</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Flatpickr -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+
   <style>
-    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,sans-serif; margin:0; padding:20px; }
-    .card { background:#fff; border-radius:16px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
-    h1 { font-size:18px; margin:0 0 12px; }
-    label { display:block; margin:8px 0 6px; font-size:14px; opacity:.85; }
-    input[type="date"] { width:100%; padding:12px; border-radius:12px; border:1px solid rgba(0,0,0,.15); font-size:16px; }
-    .muted { font-size:12px; opacity:.7; margin-top:8px; }
+    :root{
+      --card-bg: var(--tg-theme-secondary-bg-color, #fff);
+      --text: var(--tg-theme-text-color, #111);
+      --muted: var(--tg-theme-hint-color, #6b7280);
+      --stroke: rgba(0,0,0,.12);
+      --radius-xl: 22px;
+      --radius: 14px;
+    }
+    *{ box-sizing: border-box; }
+    body{
+      margin:0; padding:20px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: var(--text);
+      background: var(--tg-theme-bg-color, #f6f7f9);
+    }
+    .card{
+      background: var(--card-bg);
+      border-radius: var(--radius-xl);
+      padding: 18px 18px 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      overflow: hidden; /* чтобы внутренности не вылазили за скругление */
+      max-width: 680px; margin: 0 auto;
+    }
+    h1{ font-size: 24px; line-height: 1.25; margin: 0 0 16px; }
+    label{ display:block; font-size:18px; margin: 4px 0 8px; }
+    /* поле – внутри не вылезает за края */
+    input[type="text"].date-input{
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      font-size: 18px;
+      line-height: 1.2;
+      background: #fff;
+    }
+    .muted{ font-size: 15px; color: var(--muted); margin-top: 12px; }
+
+    /* СДЕЛАТЬ КАЛЕНДАРЬ КРУПНЫМ */
+    .flatpickr-calendar{
+      font-size: 16px;          /* базовый размер */
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.15);
+    }
+    .flatpickr-days{ border-radius: 12px; }
+    .flatpickr-day{ height: 42px; line-height: 42px; } /* крупные ячейки */
+    .flatpickr-months .flatpickr-month{ height: 48px; }
+    .flatpickr-current-month .cur-month, 
+    .flatpickr-current-month .numInputWrapper input{
+      font-size: 18px;
+    }
+
+    /* на узких экранах добавим небольшие отступы */
+    @media (max-width: 420px){
+      body{ padding: 14px; }
+      h1{ font-size: 22px; }
+      .flatpickr-day{ height: 38px; line-height: 38px; }
+    }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>Выберите дату тура</h1>
     <label for="date">Дата</label>
-    <input id="date" type="date" />
+    <!-- это текстовое поле под Flatpickr -->
+    <input id="date" class="date-input" type="text" placeholder="дд.мм.гггг" readonly />
     <div class="muted">Нажмите «Готово» внизу, чтобы подтвердить.</div>
   </div>
 
   <script>
     const tg = window.Telegram.WebApp;
-    tg.expand();           // развернуть на максимум
-    tg.ready();            // сказать клиенту, что всё загружено
+    tg.expand();
+    tg.ready();
 
-    // оформить и показать основную кнопку
+    // Основная кнопка Telegram
     tg.MainButton.setText('Готово');
     tg.MainButton.show();
-    tg.MainButton.disable(); // пока дата не выбрана
+    tg.MainButton.disable();
 
-    // ограничить диапазон дат (сегодня .. +2 месяца)
-    const input = document.getElementById('date');
+    // Диапазон: сегодня .. +365 дней
     const today = new Date();
-    const max = new Date(today); max.setMonth(max.getMonth() + 2);
-    const toISO = d => d.toISOString().slice(0,10);
-    input.min = toISO(today);
-    input.max = toISO(max);
+    const max = new Date(today);
+    max.setDate(max.getDate() + 365);
 
-    // включаем кнопку, когда есть значение
-    function updateBtn() {
-      if (input.value) tg.MainButton.enable(); else tg.MainButton.disable();
-    }
-    input.addEventListener('input', updateBtn);
-    input.addEventListener('change', updateBtn);
-
-    // клин на кнопку — отправляем данные в бота
-    tg.MainButton.onClick(() => {
-      const payload = { date: input.value }; // YYYY-MM-DD
-      if (!payload.date) { tg.showAlert('Выберите дату'); return; }
-      tg.sendData(JSON.stringify(payload));
-      // опционально показать всплывашку
-      // tg.showAlert('Отправлено: ' + payload.date);
+    // Инициализация Flatpickr (всегда кастомный календарь, даже на iOS)
+    const input = document.getElementById('date');
+    const fp = flatpickr(input, {
+      locale: 'ru',
+      disableMobile: true,
+      dateFormat: 'd.m.Y',           // что видит пользователь
+      defaultDate: today,            // можно убрать, если без авто-даты
+      minDate: today,
+      maxDate: max,
+      position: 'auto center',
+      static: false,                 // всплывающее окно
+      onReady: (sel, str, inst) => {
+        // Откроем календарь сразу, чтобы не нужно было нажимать поле
+        setTimeout(() => inst.open(), 50);
+      },
+      onChange: (selectedDates) => {
+        if (selectedDates && selectedDates[0]) {
+          tg.MainButton.enable();
+          // Запомним ISO для отправки в бота (локальная дата без сдвига часового пояса)
+          const d = selectedDates[0];
+          const iso = new Date(d.getTime() - d.getTimezoneOffset()*60000)
+                        .toISOString().slice(0,10); // YYYY-MM-DD
+          input.dataset.iso = iso;
+        } else {
+          tg.MainButton.disable();
+          delete input.dataset.iso;
+        }
+      }
     });
 
-    // Тёмная/светлая тема из Telegram (не обязательно)
-    // tg.setHeaderColor('secondary_bg_color');
-    // tg.setBackgroundColor('secondary_bg_color');
+    // Отправка данных в бота
+    tg.MainButton.onClick(() => {
+      const iso = input.dataset.iso;
+      if (!iso) { tg.showAlert('Выберите дату'); return; }
+      const payload = { date: iso };  // n8n ждёт поле date в ISO
+      tg.sendData(JSON.stringify(payload));
+    });
   </script>
 </body>
 </html>
