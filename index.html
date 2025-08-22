@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Выбор даты</title>
+  <title>Выбор даты тура</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root{
@@ -13,9 +13,9 @@
       --muted: var(--tg-theme-hint-color, #6b7280);
       --stroke: rgba(0,0,0,.12);
       --radius-xl: 22px;
-      --radius: 14px;                /* такой же радиус, как у кнопки */
-      --ctl-h: 48px;                 /* единая высота контролов */
-      --selected: #E6EBF5;
+      --radius: 14px;                     /* единый радиус и для селектов, и для кнопки */
+      --ctl-h: 48px;                      /* единая высота контролов */
+      --selected: #E6EBF5;                /* цвет выбранного дня */
       --accent-grad: linear-gradient(0.25turn, rgba(96,211,147,1) 0%, rgba(99,213,236,1) 100%);
     }
     *{ box-sizing:border-box; }
@@ -38,24 +38,28 @@
       margin-bottom:10px;
       align-items:center;
     }
+
+    /* Кнопки-стрелки: тот же градиент, что у кнопки «Готово» */
     .arrow{
       height:var(--ctl-h); width:var(--ctl-h);
-      border:1px solid var(--stroke);
-      border-radius:var(--radius);
-      background:#fff;
-      font-size:22px; line-height:1;
+      border:0; border-radius:var(--radius);
+      background: var(--accent-grad);
+      color:#fff; font-size:22px; line-height:1;
       display:flex; align-items:center; justify-content:center;
       cursor:pointer; user-select:none;
+      box-shadow:0 6px 16px rgba(99,213,236,.25);
+      transition: transform .03s ease, filter .15s ease;
     }
+    .arrow:active{ transform: translateY(1px); filter:brightness(.98); }
 
-    /* Обёртка селекта с красивой границей и общим радиусом */
+    /* Обёртка селекта: скругление и красивый фокус */
     .select-wrap{
       height:var(--ctl-h);
       border-radius:var(--radius);
       border:1.5px solid var(--stroke);
       background:#fff;
-      overflow:hidden;               /* скругление как у кнопки */
-      display:flex; align-items:center;
+      overflow:hidden; display:flex; align-items:center;
+      transition: border-color .15s ease;
     }
     /* при фокусе – градиентная рамка как у кнопки */
     .select-wrap.focus{
@@ -64,18 +68,11 @@
         linear-gradient(#fff,#fff) padding-box,
         var(--accent-grad) border-box;
     }
-    /* сам <select> — чёрный текст на мобилке, без нативного блика */
+    /* сам <select> — чёрный текст, без нативного блика */
     select{
-      flex:1 1 auto;
-      height:100%;
-      padding:0 14px;
-      border:0;
-      background:transparent;
-      color:#111;                     /* чёрный текст на мобильных */
-      font-size:16px;
-      appearance: none;               /* убираем нативные серые градиенты */
-      -webkit-appearance: none;
-      outline: none;
+      flex:1 1 auto; height:100%; padding:0 14px; border:0;
+      background:transparent; color:#111; font-size:16px;
+      appearance:none; -webkit-appearance:none; outline:none;
     }
 
     .grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
@@ -135,18 +132,19 @@
   </div>
 
   <script>
+    // Telegram init
     const tg = window.Telegram.WebApp;
     tg.expand(); tg.ready(); tg.MainButton.hide();
 
+    // Константы/состояние
     const RU_MONTHS = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
     const DOW = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
-
     const now = new Date();
     const currentYear = now.getFullYear();
-    const years = [currentYear, currentYear+1, currentYear+2];
+    const years = [currentYear, currentYear+1, currentYear+2]; // 2 года вперёд
+    const sel = { y: currentYear, m: now.getMonth(), d: null }; // без предвыбора дня
 
-    const sel = { y: currentYear, m: now.getMonth(), d: null };
-
+    // DOM
     const monthEl = document.getElementById('month');
     const yearEl  = document.getElementById('year');
     const mPrev   = document.getElementById('m-prev');
@@ -155,19 +153,18 @@
     const yNext   = document.getElementById('y-next');
     const wrapMonth = document.getElementById('wrap-month');
     const wrapYear  = document.getElementById('wrap-year');
-
     const dowEl   = document.getElementById('dow');
     const daysEl  = document.getElementById('days');
     const btn     = document.getElementById('submit');
 
-    // фокус-подсветка селектов
+    // Фокус-подсветка селектов
     function bindFocusWrap(select, wrap){
       select.addEventListener('focus', ()=>wrap.classList.add('focus'));
       select.addEventListener('blur',  ()=>wrap.classList.remove('focus'));
-      // iOS иногда не даёт blur — сбросим при изменении
-      select.addEventListener('change', ()=>wrap.classList.remove('focus'));
+      select.addEventListener('change',()=>wrap.classList.remove('focus')); // iOS fix
     }
 
+    // Шапка дней недели
     function renderDOW(){
       dowEl.innerHTML = "";
       DOW.forEach(n => {
@@ -177,14 +174,20 @@
         dowEl.appendChild(div);
       });
     }
+
+    // Селекты
     function fillSelects(){
       monthEl.innerHTML = RU_MONTHS.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
       yearEl.innerHTML  = years.map(y=>`<option value="${y}">${y}</option>`).join('');
       monthEl.value = sel.m; yearEl.value = sel.y;
     }
-    const daysInMonth=(y,m)=> new Date(y, m+1, 0).getDate();
-    const firstWeekdayIndex=(y,m)=> (new Date(y,m,1).getDay()+6)%7;
 
+    // Вспомогательные
+    const daysInMonth      = (y,m)=> new Date(y, m+1, 0).getDate();
+    const firstWeekdayIndex= (y,m)=> (new Date(y,m,1).getDay()+6)%7; // Пн=0..Вс=6
+    const toISO            = (y,m,d)=> new Date(Date.UTC(y,m,d)).toISOString().slice(0,10);
+
+    // Сетка дней
     function renderDays(){
       daysEl.innerHTML = "";
       const y = +yearEl.value, m = +monthEl.value;
@@ -207,6 +210,7 @@
       }
     }
 
+    // Навигация
     function shiftMonth(delta){
       let y = Number(yearEl.value);
       let m = Number(monthEl.value) + delta;
@@ -225,18 +229,18 @@
       yearEl.value=y; renderDays();
     }
 
-    // init
+    // Инициализация
     renderDOW(); fillSelects(); renderDays();
+    bindFocusWrap(monthEl, wrapMonth);
+    bindFocusWrap(yearEl,  wrapYear);
     monthEl.onchange=renderDays; yearEl.onchange=renderDays;
     mPrev.onclick=()=>shiftMonth(-1); mNext.onclick=()=>shiftMonth(1);
     yPrev.onclick=()=>shiftYear(-1);  yNext.onclick=()=>shiftYear(1);
-    bindFocusWrap(monthEl, wrapMonth);
-    bindFocusWrap(yearEl,  wrapYear);
 
-    function toISO(y,m,d){ return new Date(Date.UTC(y,m,d)).toISOString().slice(0,10); }
+    // Отправка в бота
     btn.onclick=()=>{
       if(!sel.d) return;
-      const iso = toISO(sel.y, sel.m, sel.d);
+      const iso = toISO(sel.y, sel.m, sel.d);            // YYYY-MM-DD
       tg.sendData(JSON.stringify({ date: iso }));
     };
   </script>
