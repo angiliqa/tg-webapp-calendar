@@ -13,9 +13,9 @@
       --muted: var(--tg-theme-hint-color, #6b7280);
       --stroke: rgba(0,0,0,.12);
       --radius-xl: 22px;
-      --radius: 14px;
-      --ctl-h: 48px;                       /* ЕДИНАЯ ВЫСОТА контролов */
-      --selected: #E6EBF5;                 /* цвет выбранной даты */
+      --radius: 14px;                /* такой же радиус, как у кнопки */
+      --ctl-h: 48px;                 /* единая высота контролов */
+      --selected: #E6EBF5;
       --accent-grad: linear-gradient(0.25turn, rgba(96,211,147,1) 0%, rgba(99,213,236,1) 100%);
     }
     *{ box-sizing:border-box; }
@@ -30,7 +30,7 @@
     h1{ font-size:24px; margin:0 0 16px; }
     label{ display:block; font-size:18px; margin:6px 0 10px; }
 
-    /* ЕДИНЫЙ КОНТРОЛ: стрелка — селект — стрелка */
+    /* Ряд: стрелка — селект — стрелка (одинаковая высота и радиусы) */
     .control{
       display:grid;
       grid-template-columns: var(--ctl-h) 1fr var(--ctl-h);
@@ -47,13 +47,35 @@
       display:flex; align-items:center; justify-content:center;
       cursor:pointer; user-select:none;
     }
-    select{
+
+    /* Обёртка селекта с красивой границей и общим радиусом */
+    .select-wrap{
       height:var(--ctl-h);
-      padding:0 14px;
-      border:1px solid var(--stroke);
       border-radius:var(--radius);
-      font-size:16px; background:#fff;
-      appearance:auto;
+      border:1.5px solid var(--stroke);
+      background:#fff;
+      overflow:hidden;               /* скругление как у кнопки */
+      display:flex; align-items:center;
+    }
+    /* при фокусе – градиентная рамка как у кнопки */
+    .select-wrap.focus{
+      border: 1.5px solid transparent;
+      background:
+        linear-gradient(#fff,#fff) padding-box,
+        var(--accent-grad) border-box;
+    }
+    /* сам <select> — чёрный текст на мобилке, без нативного блика */
+    select{
+      flex:1 1 auto;
+      height:100%;
+      padding:0 14px;
+      border:0;
+      background:transparent;
+      color:#111;                     /* чёрный текст на мобильных */
+      font-size:16px;
+      appearance: none;               /* убираем нативные серые градиенты */
+      -webkit-appearance: none;
+      outline: none;
     }
 
     .grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
@@ -86,17 +108,21 @@
     <h1>Выберите дату тура</h1>
     <label>Дата</label>
 
-    <!-- Ряд 1: МЕСЯЦ (стрелка — селект — стрелка) -->
+    <!-- МЕСЯЦ -->
     <div class="control">
       <button class="arrow" id="m-prev" aria-label="Предыдущий месяц">‹</button>
-      <select id="month"></select>
+      <div class="select-wrap" id="wrap-month">
+        <select id="month"></select>
+      </div>
       <button class="arrow" id="m-next" aria-label="Следующий месяц">›</button>
     </div>
 
-    <!-- Ряд 2: ГОД (стрелка — селект — стрелка) -->
+    <!-- ГОД -->
     <div class="control">
       <button class="arrow" id="y-prev" aria-label="Предыдущий год">‹</button>
-      <select id="year"></select>
+      <div class="select-wrap" id="wrap-year">
+        <select id="year"></select>
+      </div>
       <button class="arrow" id="y-next" aria-label="Следующий год">›</button>
     </div>
 
@@ -117,9 +143,9 @@
 
     const now = new Date();
     const currentYear = now.getFullYear();
-    const years = [currentYear, currentYear+1, currentYear+2]; // 2 года вперёд
+    const years = [currentYear, currentYear+1, currentYear+2];
 
-    const sel = { y: currentYear, m: now.getMonth(), d: null }; // без предвыбора
+    const sel = { y: currentYear, m: now.getMonth(), d: null };
 
     const monthEl = document.getElementById('month');
     const yearEl  = document.getElementById('year');
@@ -127,9 +153,20 @@
     const mNext   = document.getElementById('m-next');
     const yPrev   = document.getElementById('y-prev');
     const yNext   = document.getElementById('y-next');
+    const wrapMonth = document.getElementById('wrap-month');
+    const wrapYear  = document.getElementById('wrap-year');
+
     const dowEl   = document.getElementById('dow');
     const daysEl  = document.getElementById('days');
     const btn     = document.getElementById('submit');
+
+    // фокус-подсветка селектов
+    function bindFocusWrap(select, wrap){
+      select.addEventListener('focus', ()=>wrap.classList.add('focus'));
+      select.addEventListener('blur',  ()=>wrap.classList.remove('focus'));
+      // iOS иногда не даёт blur — сбросим при изменении
+      select.addEventListener('change', ()=>wrap.classList.remove('focus'));
+    }
 
     function renderDOW(){
       dowEl.innerHTML = "";
@@ -146,7 +183,7 @@
       monthEl.value = sel.m; yearEl.value = sel.y;
     }
     const daysInMonth=(y,m)=> new Date(y, m+1, 0).getDate();
-    const firstWeekdayIndex=(y,m)=> (new Date(y,m,1).getDay()+6)%7; // Пн=0..Вс=6
+    const firstWeekdayIndex=(y,m)=> (new Date(y,m,1).getDay()+6)%7;
 
     function renderDays(){
       daysEl.innerHTML = "";
@@ -170,19 +207,16 @@
       }
     }
 
-    // перелистывание месяца
     function shiftMonth(delta){
       let y = Number(yearEl.value);
       let m = Number(monthEl.value) + delta;
       if (m<0){ m=11; y--; }
       if (m>11){ m=0;  y++; }
-      // удерживаем в разрешённых годах
       const minY=years[0], maxY=years[years.length-1];
       if (y<minY){ y=minY; m=0; }
       if (y>maxY){ y=maxY; m=11; }
       yearEl.value=y; monthEl.value=m; renderDays();
     }
-    // перелистывание года
     function shiftYear(delta){
       let y = Number(yearEl.value) + delta;
       const minY=years[0], maxY=years[years.length-1];
@@ -196,6 +230,8 @@
     monthEl.onchange=renderDays; yearEl.onchange=renderDays;
     mPrev.onclick=()=>shiftMonth(-1); mNext.onclick=()=>shiftMonth(1);
     yPrev.onclick=()=>shiftYear(-1);  yNext.onclick=()=>shiftYear(1);
+    bindFocusWrap(monthEl, wrapMonth);
+    bindFocusWrap(yearEl,  wrapYear);
 
     function toISO(y,m,d){ return new Date(Date.UTC(y,m,d)).toISOString().slice(0,10); }
     btn.onclick=()=>{
@@ -206,3 +242,4 @@
   </script>
 </body>
 </html>
+
