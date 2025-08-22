@@ -13,9 +13,9 @@
       --muted: var(--tg-theme-hint-color, #6b7280);
       --stroke: rgba(0,0,0,.12);
       --radius-xl: 22px;
-      --radius: 14px;                     /* единый радиус и для селектов, и для кнопки */
-      --ctl-h: 48px;                      /* единая высота контролов */
-      --selected: #E6EBF5;                /* цвет выбранного дня */
+      --radius: 14px;
+      --ctl-h: 48px;
+      --selected: #E6EBF5;
       --accent-grad: linear-gradient(0.25turn, rgba(96,211,147,1) 0%, rgba(99,213,236,1) 100%);
     }
     *{ box-sizing:border-box; }
@@ -25,67 +25,73 @@
     }
     .card{
       background:var(--card); border-radius:var(--radius-xl); padding:18px;
-      max-width:760px; margin:0 auto; box-shadow:0 1px 4px rgba(0,0,0,.06);
+      max-width:860px; margin:0 auto; box-shadow:0 1px 4px rgba(0,0,0,.06);
     }
     h1{ font-size:24px; margin:0 0 16px; }
     label{ display:block; font-size:18px; margin:6px 0 10px; }
 
-    /* Ряд: стрелка — селект — стрелка (одинаковая высота и радиусы) */
+    /* стрелка — селект — стрелка */
     .control{
       display:grid;
       grid-template-columns: var(--ctl-h) 1fr var(--ctl-h);
-      gap:12px;
-      margin-bottom:10px;
-      align-items:center;
+      gap:12px; margin-bottom:10px; align-items:center;
     }
-
-    /* Кнопки-стрелки: тот же градиент, что у кнопки «Готово» */
     .arrow{
-      height:var(--ctl-h); width:var(--ctl-h);
-      border:0; border-radius:var(--radius);
-      background: var(--accent-grad);
-      color:#fff; font-size:22px; line-height:1;
-      display:flex; align-items:center; justify-content:center;
-      cursor:pointer; user-select:none;
-      box-shadow:0 6px 16px rgba(99,213,236,.25);
+      height:var(--ctl-h); width:var(--ctl-h); border:0; border-radius:var(--radius);
+      background: var(--accent-grad); color:#fff; font-size:22px; line-height:1;
+      display:flex; align-items:center; justify-content:center; cursor:pointer;
+      user-select:none; box-shadow:0 6px 16px rgba(99,213,236,.25);
       transition: transform .03s ease, filter .15s ease;
     }
     .arrow:active{ transform: translateY(1px); filter:brightness(.98); }
 
-    /* Обёртка селекта: скругление и красивый фокус */
     .select-wrap{
-      height:var(--ctl-h);
-      border-radius:var(--radius);
-      border:1.5px solid var(--stroke);
-      background:#fff;
-      overflow:hidden; display:flex; align-items:center;
-      transition: border-color .15s ease;
+      height:var(--ctl-h); border-radius:var(--radius);
+      border:1.5px solid var(--stroke); background:#fff; overflow:hidden;
+      display:flex; align-items:center; transition: border-color .15s ease;
     }
-    /* при фокусе – градиентная рамка как у кнопки */
     .select-wrap.focus{
       border: 1.5px solid transparent;
       background:
         linear-gradient(#fff,#fff) padding-box,
         var(--accent-grad) border-box;
     }
-    /* сам <select> — чёрный текст, без нативного блика */
     select{
-      flex:1 1 auto; height:100%; padding:0 14px; border:0;
-      background:transparent; color:#111; font-size:16px;
-      appearance:none; -webkit-appearance:none; outline:none;
+      flex:1 1 auto; height:100%; padding:0 14px; border:0; background:transparent;
+      color:#111; font-size:16px; appearance:none; -webkit-appearance:none; outline:none;
     }
 
     .grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
     .dow{ text-align:center; font-size:14px; color:var(--muted); margin-top:6px; }
     .day{
+      position:relative;
       text-align:center; padding:12px 0; border:1px solid var(--stroke);
       border-radius:12px; background:#fff; font-size:16px; cursor:pointer;
       user-select:none;
     }
     .day.empty{ visibility:hidden; }
+    .day.disabled{ opacity:.35; pointer-events:none; }
     .day.selected{ background:var(--selected); border-color:var(--selected); }
+    .day.hasOffer::after{
+      content:""; position:absolute; left:50%; bottom:6px; width:6px; height:6px;
+      border-radius:50%; background:#7aa2ff; transform:translateX(-50%);
+    }
 
     .muted{ font-size:15px; color:var(--muted); margin-top:12px; }
+
+    .chips{ display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 4px; }
+    .chip{
+      padding:10px 12px; border:1px solid var(--stroke); border-radius:12px; background:#fff;
+      font-size:15px; cursor:pointer; user-select:none;
+    }
+    .chip small{ color:var(--muted); margin-left:6px; }
+    .chip.selected{
+      background: var(--accent-grad); color:#fff; border:0;
+      box-shadow:0 6px 16px rgba(99,213,236,.25);
+    }
+
+    .section-title{ margin-top:16px; font-weight:600; }
+
     .btn{
       width:100%; margin-top:16px; padding:14px 16px; border:0; border-radius:14px;
       font-size:17px; font-weight:600; color:#fff; background:var(--accent-grad);
@@ -93,7 +99,7 @@
     }
     .btn:disabled{ opacity:.5; cursor:not-allowed; }
 
-    @media (max-width:420px){
+    @media (max-width:500px){
       body{ padding:14px; }
       h1{ font-size:22px; }
       :root{ --ctl-h: 44px; }
@@ -123,26 +129,58 @@
       <button class="arrow" id="y-next" aria-label="Следующий год">›</button>
     </div>
 
-    <!-- Дни недели и сетка -->
+    <!-- Календарь -->
     <div class="grid" id="dow"></div>
     <div class="grid" id="days"></div>
+
+    <!-- Результаты по выбранной дате -->
+    <div class="section-title" id="byDateTitle" style="display:none">Доступно в выбранный день</div>
+    <div class="chips" id="byDate"></div>
+
+    <!-- Список всех туров -->
+    <div class="section-title">Туры</div>
+    <div class="chips" id="allTours"></div>
 
     <div class="muted">Нажмите «Готово» ниже, чтобы подтвердить.</div>
     <button id="submit" class="btn" disabled>Готово</button>
   </div>
 
   <script>
-    // Telegram init
+    // ====== Telegram init ======
     const tg = window.Telegram.WebApp;
     tg.expand(); tg.ready(); tg.MainButton.hide();
 
-    // Константы/состояние
+    // ====== DATA: подключение вашей доступности ======
+    // Если укажете URL (например, n8n webhook или GitHub raw), дата подтянется оттуда.
+    // Формат ниже в DEMO: tours[] и availability[].
+    const AVAIL_URL = null; // например: 'https://your-n8n/webhook/availability'
+    const DEMO = {
+      tours: [
+        { id:'teriberka_1d', name:'Териберка · 1 день' },
+        { id:'khibiny_1d',    name:'Хибины · 1 день' },
+        { id:'saffari_1d',    name:'Сафари на снегоходах' }
+      ],
+      availability: [
+        // date, tour, slots (>=1 — есть места; 0 — распродано)
+        { date:'2025-08-02', tour:'khibiny_1d',    slots: 7 },
+        { date:'2025-08-03', tour:'khibiny_1d',    slots: 4 },
+        { date:'2025-08-08', tour:'teriberka_1d',  slots: 9 },
+        { date:'2025-08-10', tour:'saffari_1d',    slots: 2 },
+        { date:'2025-08-22', tour:'teriberka_1d',  slots: 6 },
+        { date:'2025-08-22', tour:'khibiny_1d',    slots: 3 },
+        { date:'2025-09-05', tour:'teriberka_1d',  slots: 10 },
+        { date:'2025-09-06', tour:'khibiny_1d',    slots: 5 },
+      ]
+    };
+
+    // ====== UI state ======
     const RU_MONTHS = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
     const DOW = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
     const now = new Date();
     const currentYear = now.getFullYear();
-    const years = [currentYear, currentYear+1, currentYear+2]; // 2 года вперёд
-    const sel = { y: currentYear, m: now.getMonth(), d: null }; // без предвыбора дня
+    const years = [currentYear, currentYear+1, currentYear+2];
+
+    const sel = { y: currentYear, m: now.getMonth(), d: null, tour: null };
 
     // DOM
     const monthEl = document.getElementById('month');
@@ -155,62 +193,138 @@
     const wrapYear  = document.getElementById('wrap-year');
     const dowEl   = document.getElementById('dow');
     const daysEl  = document.getElementById('days');
+    const byDateTitle = document.getElementById('byDateTitle');
+    const byDate  = document.getElementById('byDate');
+    const allTours= document.getElementById('allTours');
     const btn     = document.getElementById('submit');
 
-    // Фокус-подсветка селектов
+    // ====== helpers ======
+    const pad = n => String(n).padStart(2,'0');
+    const toISO = (y,m,d)=> new Date(Date.UTC(y,m,d)).toISOString().slice(0,10);
+    const daysInMonth = (y,m)=> new Date(y, m+1, 0).getDate();
+    const firstWeekdayIndex = (y,m)=> (new Date(y,m,1).getDay()+6)%7; // Пн=0..Вс=6
+
     function bindFocusWrap(select, wrap){
       select.addEventListener('focus', ()=>wrap.classList.add('focus'));
       select.addEventListener('blur',  ()=>wrap.classList.remove('focus'));
-      select.addEventListener('change',()=>wrap.classList.remove('focus')); // iOS fix
+      select.addEventListener('change',()=>wrap.classList.remove('focus'));
     }
 
-    // Шапка дней недели
     function renderDOW(){
       dowEl.innerHTML = "";
-      DOW.forEach(n => {
+      DOW.forEach(n=>{
         const div = document.createElement('div');
         div.className = 'dow';
         div.textContent = n;
         dowEl.appendChild(div);
       });
     }
-
-    // Селекты
     function fillSelects(){
       monthEl.innerHTML = RU_MONTHS.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
       yearEl.innerHTML  = years.map(y=>`<option value="${y}">${y}</option>`).join('');
       monthEl.value = sel.m; yearEl.value = sel.y;
     }
 
-    // Вспомогательные
-    const daysInMonth      = (y,m)=> new Date(y, m+1, 0).getDate();
-    const firstWeekdayIndex= (y,m)=> (new Date(y,m,1).getDay()+6)%7; // Пн=0..Вс=6
-    const toISO            = (y,m,d)=> new Date(Date.UTC(y,m,d)).toISOString().slice(0,10);
+    // ====== availability indexes ======
+    let TOURS = [], DATE_MAP = new Map(), TOUR_MAP = new Map();
+    function buildIndexes(src){
+      TOURS = src.tours;
+      DATE_MAP = new Map();  // dateISO -> Map(tourId -> slots)
+      TOUR_MAP = new Map();  // tourId  -> Set(dateISO)
 
-    // Сетка дней
+      src.availability.forEach(({date, tour, slots})=>{
+        if (!DATE_MAP.has(date)) DATE_MAP.set(date, new Map());
+        DATE_MAP.get(date).set(tour, slots);
+
+        if (!TOUR_MAP.has(tour)) TOUR_MAP.set(tour, new Set());
+        TOUR_MAP.get(tour).add(date);
+      });
+    }
+
+    function datesForTour(tourId){ return TOUR_MAP.get(tourId) || new Set(); }
+    function toursForDate(dateISO){ return DATE_MAP.get(dateISO) || new Map(); }
+
+    // ====== render calendar ======
     function renderDays(){
       daysEl.innerHTML = "";
       const y = +yearEl.value, m = +monthEl.value;
       const blanks = firstWeekdayIndex(y,m);
       const count = daysInMonth(y,m);
+      const allowed = sel.tour ? datesForTour(sel.tour) : null;
 
+      // пустые
       for(let i=0;i<blanks;i++){
         const e = document.createElement('div'); e.className='day empty'; daysEl.appendChild(e);
       }
+      // дни
       for(let d=1; d<=count; d++){
-        const e = document.createElement('div'); e.className='day'; e.textContent=d;
-        if (sel.y===y && sel.m===m && sel.d===d) e.classList.add('selected');
+        const iso = `${y}-${pad(m+1)}-${pad(d)}`;
+        const offersMap = toursForDate(iso);
+        const hasOffer = offersMap.size>0;
+        const allowedHere = !sel.tour || (allowed && allowed.has(iso));
+        const e = document.createElement('div');
+        e.className = 'day' + (hasOffer ? ' hasOffer':'')
+                            + (allowedHere ? '' : ' disabled')
+                            + (sel.y===y && sel.m===m && sel.d===d ? ' selected':'');
+        e.textContent = d;
+
         e.onclick = ()=>{
+          if (!allowedHere) return;
           sel.y=y; sel.m=m; sel.d=d;
           Array.from(daysEl.children).forEach(c=>c.classList.remove('selected'));
           e.classList.add('selected');
-          btn.disabled=false;
+          renderByDate(); updateSubmitState();
         };
         daysEl.appendChild(e);
       }
+      renderByDate(); // чтобы список туров за день всегда синхронно обновлялся
     }
 
-    // Навигация
+    // туры доступные в выбранный день
+    function renderByDate(){
+      const hasDate = sel.d != null;
+      byDateTitle.style.display = hasDate ? '' : 'none';
+      byDate.innerHTML = "";
+      if (!hasDate) return;
+
+      const iso = toISO(sel.y, sel.m, sel.d);
+      const offers = toursForDate(iso); // Map(tourId -> slots)
+      if (offers.size === 0){
+        const div = document.createElement('div');
+        div.className='muted';
+        div.textContent = 'В этот день туров нет';
+        byDate.appendChild(div);
+        return;
+      }
+      TOURS.forEach(t=>{
+        if (!offers.has(t.id)) return;
+        const slots = offers.get(t.id);
+        const chip = document.createElement('div');
+        chip.className = 'chip' + (sel.tour===t.id ? ' selected':'' );
+        chip.innerHTML = `${t.name}<small>• мест: ${slots}</small>`;
+        chip.onclick = ()=>{ sel.tour = t.id; renderAllTours(); renderDays(); updateSubmitState(); };
+        byDate.appendChild(chip);
+      });
+    }
+
+    // полный список туров (для фильтра календаря)
+    function renderAllTours(){
+      allTours.innerHTML = "";
+      TOURS.forEach(t=>{
+        const dates = datesForTour(t.id);
+        const cnt = dates.size;
+        const chip = document.createElement('div');
+        chip.className = 'chip' + (sel.tour===t.id ? ' selected':'' );
+        chip.innerHTML = `${t.name}<small>• дат: ${cnt}</small>`;
+        chip.onclick = ()=>{
+          sel.tour = (sel.tour===t.id ? null : t.id); // переключатель
+          renderAllTours(); renderDays(); updateSubmitState();
+        };
+        allTours.appendChild(chip);
+      });
+    }
+
+    // ====== navigation ======
     function shiftMonth(delta){
       let y = Number(yearEl.value);
       let m = Number(monthEl.value) + delta;
@@ -219,31 +333,52 @@
       const minY=years[0], maxY=years[years.length-1];
       if (y<minY){ y=minY; m=0; }
       if (y>maxY){ y=maxY; m=11; }
-      yearEl.value=y; monthEl.value=m; renderDays();
+      yearEl.value=y; monthEl.value=m; sel.d=null; renderDays(); updateSubmitState();
     }
     function shiftYear(delta){
       let y = Number(yearEl.value) + delta;
       const minY=years[0], maxY=years[years.length-1];
       if (y<minY) y=minY;
       if (y>maxY) y=maxY;
-      yearEl.value=y; renderDays();
+      yearEl.value=y; sel.d=null; renderDays(); updateSubmitState();
     }
 
-    // Инициализация
-    renderDOW(); fillSelects(); renderDays();
-    bindFocusWrap(monthEl, wrapMonth);
-    bindFocusWrap(yearEl,  wrapYear);
-    monthEl.onchange=renderDays; yearEl.onchange=renderDays;
-    mPrev.onclick=()=>shiftMonth(-1); mNext.onclick=()=>shiftMonth(1);
-    yPrev.onclick=()=>shiftYear(-1);  yNext.onclick=()=>shiftYear(1);
-
-    // Отправка в бота
-    btn.onclick=()=>{
-      if(!sel.d) return;
-      const iso = toISO(sel.y, sel.m, sel.d);            // YYYY-MM-DD
-      tg.sendData(JSON.stringify({ date: iso }));
+    // ====== submit ======
+    function updateSubmitState(){
+      const ready = sel.d!=null && !!sel.tour;
+      btn.disabled = !ready;
+    }
+    btn.onclick = ()=>{
+      if (btn.disabled) return;
+      const iso = toISO(sel.y, sel.m, sel.d);
+      tg.sendData(JSON.stringify({ date: iso, tour: sel.tour }));
     };
+
+    // ====== boot ======
+    async function boot(){
+      bindFocusWrap(monthEl, wrapMonth);
+      bindFocusWrap(yearEl,  wrapYear);
+
+      // данные
+      let src = DEMO;
+      if (AVAIL_URL){
+        try {
+          const r = await fetch(AVAIL_URL, {cache:'no-store'});
+          src = await r.json();
+        } catch(e){ console.warn('Не удалось загрузить данные, использую DEMO', e); }
+      }
+      buildIndexes(src);
+
+      // UI
+      renderDOW(); fillSelects(); renderAllTours();
+      monthEl.onchange=()=>{ sel.d=null; renderDays(); updateSubmitState(); };
+      yearEl.onchange =()=>{ sel.d=null; renderDays(); updateSubmitState(); };
+      mPrev.onclick=()=>shiftMonth(-1); mNext.onclick=()=>shiftMonth(1);
+      yPrev.onclick=()=>shiftYear(-1);  yNext.onclick=()=>shiftYear(1);
+
+      renderDays(); updateSubmitState();
+    }
+    boot();
   </script>
 </body>
 </html>
-
