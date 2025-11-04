@@ -1,384 +1,499 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Выбор даты тура</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    :root{
-      --bg: var(--tg-theme-bg-color, #f6f7f9);
-      --card: var(--tg-theme-secondary-bg-color, #fff);
-      --text: var(--tg-theme-text-color, #111);
-      --muted: var(--tg-theme-hint-color, #6b7280);
-      --stroke: rgba(0,0,0,.12);
-      --radius-xl: 22px;
-      --radius: 14px;
-      --ctl-h: 48px;
-      --selected: #E6EBF5;
-      --accent-grad: linear-gradient(0.25turn, rgba(96,211,147,1) 0%, rgba(99,213,236,1) 100%);
-    }
-    *{ box-sizing:border-box; }
-    body{
-      margin:0; padding:20px; background:var(--bg); color:var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-    }
-    .card{
-      background:var(--card); border-radius:var(--radius-xl); padding:18px;
-      max-width:860px; margin:0 auto; box-shadow:0 1px 4px rgba(0,0,0,.06);
-    }
-    h1{ font-size:24px; margin:0 0 16px; }
-    label{ display:block; font-size:18px; margin:6px 0 10px; }
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Бронирование — Visit Teriberka</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg: var(--tg-theme-bg-color, #f6f7f9);
+  --card: var(--tg-theme-secondary-bg-color, #fff);
+  --text: var(--tg-theme-text-color, #111);
+  --muted: var(--tg-theme-hint-color, #6b7280);
+  --stroke: rgba(0,0,0,.12);
+  --accent-grad: linear-gradient(90deg,#60d393 0%,#63d5ec 100%);
+  --accent: #1a73e8;
+  --radius-xl: 22px;
+  --radius: 14px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.container{max-width:960px;margin:0 auto;padding:18px}
+.card{background:var(--card);border-radius:var(--radius-xl);box-shadow:0 1px 4px rgba(0,0,0,.06);padding:18px}
+h1{font-size:22px;margin:0 0 6px}
+.sub{font-size:14px;color:var(--muted);margin:0 0 14px}
+.stepper{display:flex;gap:8px;align-items:center;margin:6px 0 14px}
+.step{display:flex;align-items:center;gap:8px}
+.step .num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#eaf2ff;color:#114488;font-weight:700}
+.step.active .num{background:#114488;color:#fff}
+.step .label{font-size:14px;color:#444}
+.sep{height:2px;background:#e5e7eb;flex:1;border-radius:2px}
+.sep.active{background:#114488}
 
-    /* стрелка — селект — стрелка */
-    .control{
-      display:grid;
-      grid-template-columns: var(--ctl-h) 1fr var(--ctl-h);
-      gap:12px; margin-bottom:10px; align-items:center;
-    }
-    .arrow{
-      height:var(--ctl-h); width:var(--ctl-h); border:0; border-radius:var(--radius);
-      background: var(--accent-grad); color:#fff; font-size:22px; line-height:1;
-      display:flex; align-items:center; justify-content:center; cursor:pointer;
-      user-select:none; box-shadow:0 6px 16px rgba(99,213,236,.25);
-      transition: transform .03s ease, filter .15s ease;
-    }
-    .arrow:active{ transform: translateY(1px); filter:brightness(.98); }
+.section-title{margin:12px 0 8px;font-weight:700}
+.grid{display:grid;gap:10px}
+.grid.cards{grid-template-columns:repeat(2,1fr)}
+@media(max-width:720px){.grid.cards{grid-template-columns:1fr}}
+.service{border:1px solid var(--stroke);border-radius:14px;padding:12px;cursor:pointer;background:#fff}
+.service.selected{border:0;background:var(--accent-grad);color:#fff;box-shadow:0 6px 16px rgba(99,213,236,.25)}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 2px}
+.badge{font-size:11px;padding:4px 6px;border-radius:999px;background:#eef5ff;color:#114488}
+.badge.inverse{background:#114488;color:#fff}
+.meta{display:flex;gap:10px;color:#555;font-size:13px;flex-wrap:wrap}
 
-    .select-wrap{
-      height:var(--ctl-h); border-radius:var(--radius);
-      border:1.5px solid var(--stroke); background:#fff; overflow:hidden;
-      display:flex; align-items:center; transition: border-color .15s ease;
-    }
-    .select-wrap.focus{
-      border: 1.5px solid transparent;
-      background:
-        linear-gradient(#fff,#fff) padding-box,
-        var(--accent-grad) border-box;
-    }
-    select{
-      flex:1 1 auto; height:100%; padding:0 14px; border:0; background:transparent;
-      color:#111; font-size:16px; appearance:none; -webkit-appearance:none; outline:none;
-    }
+.pill{display:inline-flex;align-items:center;gap:6px;background:#f4f5f7;border:1px solid var(--stroke);padding:8px 10px;border-radius:999px;font-size:14px}
+.counter{display:inline-flex;align-items:center;gap:6px}
+.counter button{width:28px;height:28px;border-radius:8px;border:0;background:#eaf2ff;color:#114488;font-weight:700;cursor:pointer}
+.counter input{width:44px;text-align:center;border:0;background:transparent;font-weight:700}
 
-    .grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
-    .dow{ text-align:center; font-size:14px; color:var(--muted); margin-top:6px; }
-    .day{
-      position:relative;
-      text-align:center; padding:12px 0; border:1px solid var(--stroke);
-      border-radius:12px; background:#fff; font-size:16px; cursor:pointer;
-      user-select:none;
-    }
-    .day.empty{ visibility:hidden; }
-    .day.disabled{ opacity:.35; pointer-events:none; }
-    .day.selected{ background:var(--selected); border-color:var(--selected); }
-    .day.hasOffer::after{
-      content:""; position:absolute; left:50%; bottom:6px; width:6px; height:6px;
-      border-radius:50%; background:#7aa2ff; transform:translateX(-50%);
-    }
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.input{position:relative;flex:1;min-width:220px}
+.input input{width:100%;height:44px;border-radius:12px;border:1px solid var(--stroke);padding:0 12px;font-size:15px;background:#fff}
+.input label{position:absolute;left:10px;top:-10px;background:#fff;padding:0 6px;font-size:12px;color:#777;border-radius:6px}
 
-    .muted{ font-size:15px; color:var(--muted); margin-top:12px; }
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.dow{font-size:12px;color:#6b7280;text-align:center}
+.cell{height:40px;border-radius:10px;border:1px solid var(--stroke);display:flex;align-items:center;justify-content:center;background:#fff;cursor:pointer}
+.cell.muted{opacity:.35;pointer-events:none}
+.cell.sel{background:#e6ebf5;border-color:#e6ebf5}
+.cell.dot{position:relative}
+.cell.dot::after{content:"";position:absolute;left:50%;bottom:6px;width:6px;height:6px;border-radius:50%;background:#7aa2ff;transform:translateX(-50%)}
 
-    .chips{ display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 4px; }
-    .chip{
-      padding:10px 12px; border:1px solid var(--stroke); border-radius:12px; background:#fff;
-      font-size:15px; cursor:pointer; user-select:none;
-    }
-    .chip small{ color:var(--muted); margin-left:6px; }
-    .chip.selected{
-      background: var(--accent-grad); color:#fff; border:0;
-      box-shadow:0 6px 16px rgba(99,213,236,.25);
-    }
+.times{display:flex;flex-wrap:wrap;gap:8px}
+.tt{padding:8px 10px;border:1px solid var(--stroke);border-radius:12px;cursor:pointer;background:#fff}
+.tt.sel{background:var(--accent-grad);color:#fff;border:0;box-shadow:0 6px 16px rgba(99,213,236,.25)}
 
-    .section-title{ margin-top:16px; font-weight:600; }
+.stickey{position:sticky;bottom:0;left:0;right:0;margin-top:16px}
+.box{border:1px dashed #cbd5e1;border-radius:14px;padding:12px;background:#fcfdff}
 
-    .btn{
-      width:100%; margin-top:16px; padding:14px 16px; border:0; border-radius:14px;
-      font-size:17px; font-weight:600; color:#fff; background:var(--accent-grad);
-      cursor:pointer; box-shadow:0 6px 16px rgba(99,213,236,.25);
-    }
-    .btn:disabled{ opacity:.5; cursor:not-allowed; }
+.footer{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.total{font-weight:700}
+.btn{flex:1 1 auto;min-width:220px;height:48px;border:0;border-radius:14px;color:#fff;font-weight:700;font-size:16px;cursor:pointer;background:var(--accent-grad);box-shadow:0 6px 16px rgba(99,213,236,.25)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
 
-    @media (max-width:500px){
-      body{ padding:14px; }
-      h1{ font-size:22px; }
-      :root{ --ctl-h: 44px; }
-    }
-  </style>
+.muted{color:var(--muted);font-size:13px}
+.help{font-size:12px;color:#114488;margin-top:6px}
+</style>
 </head>
 <body>
+<div class="container">
   <div class="card">
-    <h1>Выберите дату тура</h1>
-    <label>Дата</label>
+    <h1>Бронирование тура</h1>
+    <p class="sub">Сделано по логике YCLIENTS: шаги, слоты и моментальная заявка менеджеру.</p>
 
-    <!-- МЕСЯЦ -->
-    <div class="control">
-      <button class="arrow" id="m-prev" aria-label="Предыдущий месяц">‹</button>
-      <div class="select-wrap" id="wrap-month">
-        <select id="month"></select>
-      </div>
-      <button class="arrow" id="m-next" aria-label="Следующий месяц">›</button>
+    <!-- STEPPER -->
+    <div class="stepper" id="stepper">
+      <div class="step s1"><div class="num">1</div><div class="label">Услуга</div></div>
+      <div class="sep"></div>
+      <div class="step s2"><div class="num">2</div><div class="label">Дата и время</div></div>
+      <div class="sep"></div>
+      <div class="step s3"><div class="num">3</div><div class="label">Контакты</div></div>
+      <div class="sep"></div>
+      <div class="step s4"><div class="num">4</div><div class="label">Подтверждение</div></div>
     </div>
 
-    <!-- ГОД -->
-    <div class="control">
-      <button class="arrow" id="y-prev" aria-label="Предыдущий год">‹</button>
-      <div class="select-wrap" id="wrap-year">
-        <select id="year"></select>
+    <!-- STEP 1: SERVICE -->
+    <div id="step1">
+      <div class="section-title">Многодневные (чт–вс, 16 мест)</div>
+      <div class="grid cards" id="multi"></div>
+
+      <div class="section-title" style="margin-top:14px">Однодневные (16 мест)</div>
+      <div class="grid cards" id="oneday"></div>
+
+      <div class="box" style="margin-top:12px">
+        <div class="badges">
+          <div class="badge inverse">Предоплата</div>
+          <div class="badge">Однодневные — 3000 ₽/чел</div>
+          <div class="badge">Многодневные — 10 000 ₽/бронирование</div>
+          <div class="badge">Оплата: СБП (Альфабанк)</div>
+        </div>
+        <div class="help">Киты подходят к берегу с <b>15 апреля (± неделя)</b>. Сентябрь–апрель — сезон Северного сияния.</div>
       </div>
-      <button class="arrow" id="y-next" aria-label="Следующий год">›</button>
     </div>
 
-    <!-- Календарь -->
-    <div class="grid" id="dow"></div>
-    <div class="grid" id="days"></div>
+    <!-- STEP 2: DATE/TIME -->
+    <div id="step2" style="display:none">
+      <div class="row" style="align-items:center;justify-content:space-between">
+        <div class="section-title" id="pickedService">—</div>
+        <div class="pill" id="capacityPill">В группе 16 мест</div>
+      </div>
 
-    <!-- Результаты по выбранной дате -->
-    <div class="section-title" id="byDateTitle" style="display:none">Доступно в выбранный день</div>
-    <div class="chips" id="byDate"></div>
+      <div class="grid" style="grid-template-columns:1fr;gap:8px">
+        <div class="row">
+          <div class="pill">Месяц: <select id="monthSel"></select></div>
+          <div class="pill">Год: <select id="yearSel"></select></div>
+        </div>
+        <div class="calendar" id="calDow"></div>
+        <div class="calendar" id="calDays"></div>
+      </div>
 
-    <!-- Список всех туров -->
-    <div class="section-title">Туры</div>
-    <div class="chips" id="allTours"></div>
+      <div class="section-title" style="margin-top:10px">Время</div>
+      <div class="times" id="times"></div>
 
-    <div class="muted">Нажмите «Готово» ниже, чтобы подтвердить.</div>
-    <button id="submit" class="btn" disabled>Готово</button>
+      <div class="section-title" style="margin-top:10px">Состав группы</div>
+      <div class="row">
+        <div class="pill">
+          Взрослые
+          <span class="counter">
+            <button id="aDec">–</button>
+            <input id="aNum" value="2" type="text" inputmode="numeric">
+            <button id="aInc">+</button>
+          </span>
+        </div>
+        <div class="pill">
+          Дети
+          <span class="counter">
+            <button id="cDec">–</button>
+            <input id="cNum" value="0" type="text" inputmode="numeric">
+            <button id="cInc">+</button>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3: CONTACTS -->
+    <div id="step3" style="display:none">
+      <div class="section-title">Контакты для бронирования</div>
+      <div class="row">
+        <div class="input"><label for="name">Имя</label><input id="name" autocomplete="name" placeholder="Иван"></div>
+        <div class="input"><label for="phone">Телефон</label><input id="phone" autocomplete="tel" placeholder="+7 999 000-00-00"></div>
+        <div class="input"><label for="email">Email (необязательно)</label><input id="email" autocomplete="email" placeholder="name@example.ru"></div>
+      </div>
+      <div class="muted" style="margin-top:10px">
+        Менеджер <b>@visitteriberka_51</b> свяжется с вами. Рабочий чат: <a href="https://t.me/+kINDB51ywO84Y2Iy" target="_blank">t.me/+kINDB51ywO84Y2Iy</a>
+      </div>
+    </div>
+
+    <!-- STEP 4: CONFIRM -->
+    <div id="step4" style="display:none">
+      <div class="section-title">Проверьте данные</div>
+      <div class="box" id="summaryBox">—</div>
+      <div class="muted">После нажатия «Записаться» заявка уйдёт менеджеру. Предоплата: однодневные — 3000 ₽/чел, многодневные — 10 000 ₽, оплата через СБП (Альфабанк).</div>
+    </div>
+
+    <!-- STICKEY FOOTER -->
+    <div class="stickey">
+      <div class="footer">
+        <div class="total" id="depositInfo">Предоплата — 0 ₽</div>
+        <button class="btn" id="nextBtn">Далее</button>
+      </div>
+    </div>
   </div>
+</div>
 
-  <script>
-    // ====== Telegram init ======
-    const tg = window.Telegram.WebApp;
-    tg.expand(); tg.ready(); tg.MainButton.hide();
+<script>
+const tg = window.Telegram.WebApp; tg.ready(); tg.expand(); tg.MainButton.hide();
 
-    // ====== DATA: подключение вашей доступности ======
-    // Если укажете URL (например, n8n webhook или GitHub raw), дата подтянется оттуда.
-    // Формат ниже в DEMO: tours[] и availability[].
-    const AVAIL_URL = null; // например: 'https://your-n8n/webhook/availability'
-    const DEMO = {
-      tours: [
-        { id:'teriberka_1d', name:'Териберка · 1 день' },
-        { id:'khibiny_1d',    name:'Хибины · 1 день' },
-        { id:'saffari_1d',    name:'Сафари на снегоходах' }
-      ],
-      availability: [
-        // date, tour, slots (>=1 — есть места; 0 — распродано)
-        { date:'2025-08-02', tour:'khibiny_1d',    slots: 7 },
-        { date:'2025-08-03', tour:'khibiny_1d',    slots: 4 },
-        { date:'2025-08-08', tour:'teriberka_1d',  slots: 9 },
-        { date:'2025-08-10', tour:'saffari_1d',    slots: 2 },
-        { date:'2025-08-22', tour:'teriberka_1d',  slots: 6 },
-        { date:'2025-08-22', tour:'khibiny_1d',    slots: 3 },
-        { date:'2025-09-05', tour:'teriberka_1d',  slots: 10 },
-        { date:'2025-09-06', tour:'khibiny_1d',    slots: 5 },
-      ]
+// ---------- Константы проекта ----------
+const MANAGER_USERNAME = 'visitteriberka_51';
+const MANAGER_CHAT_LINK = 'https://t.me/+kINDB51ywO84Y2Iy';
+const CAPACITY = 16;
+const DEPOSIT_ONE_DAY = 3000;   // ₽/чел
+const DEPOSIT_MULTI   = 10000;  // ₽/бронирование
+
+// Сервис-каталог «как YCLIENTS»
+const SERVICES = [
+  // Многодневные
+  { id:'tanzy-4d',  name:'Танцы с китами — 4 дня',    type:'multiday',  durationDays:4, weekdayPattern:[4], time:['10:00'], priceFrom:'—', labels:['Киты','Чт–Вс'] },
+  { id:'vesna-3d',  name:'Весна с китами — 3 дня',    type:'multiday',  durationDays:3, weekdayPattern:[4], time:['10:00'], priceFrom:'—', labels:['Киты','Чт–Сб'] },
+  // Однодневные
+  { id:'teriberka-4h', name:'Териберка с морем (4 часа)', type:'oneday', weekdayPattern:'daily', time:['09:00','14:00'], priceFrom:'по прайсу', labels:['Ежедневно'] },
+  { id:'hibiny-snow',  name:'Хибины на снегоступах',      type:'oneday', weekdayPattern:[2,6],   time:['11:00'],         priceFrom:'по прайсу', labels:['Вт','Сб'] },
+  { id:'obzornaya',    name:'Обзорная экскурсия',         type:'oneday', weekdayPattern:[3,0],   time:['10:00'],         priceFrom:'4500 ₽',   labels:['Ср','Вс'] },
+  { id:'park-animals', name:'Парк животных',              type:'oneday', weekdayPattern:'daily', time:['12:00','16:00'], priceFrom:'по прайсу', labels:['Ежедневно'] },
+  { id:'kandalaksha-seals', name:'Кандалакша: бельки',    type:'oneday', weekdayPattern:[4,6],   time:['09:30'],         priceFrom:'по прайсу', labels:['Чт','Сб'] },
+];
+
+// Период «весна»: сегодня → 7 июня (текущего или следующего года)
+const today = new Date();
+const springEnd = new Date(today);
+springEnd.setMonth(5); springEnd.setDate(7);
+if (today > springEnd) { springEnd.setFullYear(springEnd.getFullYear()+1); }
+
+// ---------- Вспомогательные ----------
+const RU_MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const DOW = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const pad = n=>String(n).padStart(2,'0');
+const toISO = d=>new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString().slice(0,10);
+const fromYMD=(y,m,d)=>new Date(y,m,d);
+const addDays=(d,n)=>new Date(d.getFullYear(), d.getMonth(), d.getDate()+n);
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+
+// UI refs
+const stepper = document.getElementById('stepper');
+const step1 = document.getElementById('step1');
+const step2 = document.getElementById('step2');
+const step3 = document.getElementById('step3');
+const step4 = document.getElementById('step4');
+const nextBtn = document.getElementById('nextBtn');
+const depositInfo = document.getElementById('depositInfo');
+
+const multiWrap = document.getElementById('multi');
+const onedayWrap = document.getElementById('oneday');
+
+const pickedServiceTitle = document.getElementById('pickedService');
+const monthSel = document.getElementById('monthSel');
+const yearSel = document.getElementById('yearSel');
+const calDow = document.getElementById('calDow');
+const calDays = document.getElementById('calDays');
+const timesWrap = document.getElementById('times');
+
+const aInc=document.getElementById('aInc'), aDec=document.getElementById('aDec'), aNum=document.getElementById('aNum');
+const cInc=document.getElementById('cInc'), cDec=document.getElementById('cDec'), cNum=document.getElementById('cNum');
+
+const nameEl = document.getElementById('name');
+const phoneEl = document.getElementById('phone');
+const emailEl = document.getElementById('email');
+const summaryBox = document.getElementById('summaryBox');
+
+// ---------- Состояние ----------
+const state = {
+  step:1,
+  service:null,
+  date:null,     // ISO YYYY-MM-DD
+  time:null,     // 'HH:MM'
+  adults:2,
+  children:0,
+  name:'',
+  phone:'',
+  email:''
+};
+
+// ---------- Рендер шагов ----------
+function setStep(n){
+  state.step = n;
+  // stepper
+  stepper.querySelectorAll('.step').forEach((s,i)=>{
+    s.classList.toggle('active', i < n*2); // визуально
+  });
+  stepper.querySelectorAll('.sep').forEach((s,i)=>{
+    s.classList.toggle('active', i < (n-1)*2);
+  });
+
+  step1.style.display = (n===1)?'':'none';
+  step2.style.display = (n===2)?'':'none';
+  step3.style.display = (n===3)?'':'none';
+  step4.style.display = (n===4)?'':'none';
+
+  nextBtn.textContent = (n<4)?'Далее':'Записаться';
+  updateDepositView();
+  validateNext();
+}
+
+function updateDepositView(){
+  if (!state.service){ depositInfo.textContent='Предоплата — 0 ₽'; return; }
+  const isOneDay = state.service.type==='oneday';
+  const sum = isOneDay ? DEPOSIT_ONE_DAY * (Number(state.adults)+Number(state.children)) : DEPOSIT_MULTI;
+  depositInfo.textContent = 'Предоплата — ' + sum.toLocaleString('ru-RU') + ' ₽';
+}
+
+function validateNext(){
+  let ok=false;
+  if (state.step===1){
+    ok = !!state.service;
+  } else if (state.step===2){
+    ok = !!state.date && !!state.time;
+  } else if (state.step===3){
+    ok = state.name.trim().length>=2 && /^\+?\d[\d\s\-\(\)]{7,}$/.test(state.phone);
+  } else if (state.step===4){
+    ok = true;
+  }
+  nextBtn.disabled = !ok;
+}
+
+nextBtn.addEventListener('click', ()=>{
+  if (nextBtn.disabled) return;
+  if (state.step<4){ setStep(state.step+1); if (state.step===2) ensureCalendar(); if (state.step===4) renderSummary(); }
+  else submitBooking();
+});
+
+// ---------- STEP 1: услуги ----------
+function renderServices(){
+  const multi = SERVICES.filter(s=>s.type==='multiday');
+  const one = SERVICES.filter(s=>s.type==='oneday');
+
+  function card(s){
+    const div=document.createElement('div');
+    div.className='service';
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div style="font-weight:700">${s.name}</div>
+        <div class="badge">${s.priceFrom}</div>
+      </div>
+      <div class="meta">
+        <div>Формат: ${s.type==='oneday'?'Однодневный':'Многодневный'}</div>
+        ${s.type==='multiday'?`<div>Длительность: ${s.durationDays} дн.</div>`:''}
+        <div>Вместимость: ${CAPACITY}</div>
+      </div>
+      <div class="badges">${s.labels.map(x=>`<div class="badge">${x}</div>`).join('')}</div>
+    `;
+    div.addEventListener('click', ()=>{
+      document.querySelectorAll('.service').forEach(x=>x.classList.remove('selected'));
+      div.classList.add('selected');
+      state.service=s; setStep(2); setupStep2();
+    });
+    return div;
+  }
+
+  multi.forEach(s=>multiWrap.appendChild(card(s)));
+  one.forEach(s=>onedayWrap.appendChild(card(s)));
+}
+
+// ---------- STEP 2: календарь и времена ----------
+function setupStep2(){
+  pickedServiceTitle.textContent = state.service ? state.service.name : '—';
+  const y=today.getFullYear();
+  const years=[y,y+1,y+2];
+  monthSel.innerHTML = RU_MONTHS.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+  yearSel.innerHTML  = years.map(yy=>`<option value="${yy}">${yy}</option>`).join('');
+  monthSel.value = today.getMonth();
+  yearSel.value = y;
+  monthSel.onchange=()=>renderCalendar();
+  yearSel.onchange =()=>renderCalendar();
+  renderDow();
+  renderCalendar();
+  setupCounters();
+}
+
+function renderDow(){
+  calDow.innerHTML = DOW.map(n=>`<div class="dow">${n}</div>`).join('');
+}
+
+function datesAvailableForService(svc){
+  // возвращает Set ISO дат, попадающих в весенний период и удовлетворяющих шаблону
+  const set = new Set();
+  const daily = svc.weekdayPattern==='daily';
+  for(let d=new Date(today); d<=springEnd; d=addDays(d,1)){
+    const wd = d.getDay(); // 0..6, Вс=0
+    if (svc.type==='multiday'){
+      // старт заезда по четвергам (wd==4)
+      if (wd===4) set.add(toISO(d));
+    } else {
+      if (daily || svc.weekdayPattern.includes(wd)) set.add(toISO(d));
+    }
+  }
+  return set;
+}
+
+const currentAvail = { dates:new Set(), times:[] };
+
+function renderCalendar(){
+  const y=Number(yearSel.value), m=Number(monthSel.value);
+  const first = new Date(y,m,1);
+  const blanks = (first.getDay()+6)%7; // Пн=0
+  const count = new Date(y,m+1,0).getDate();
+  const svc = state.service;
+
+  currentAvail.dates = datesAvailableForService(svc);
+  calDays.innerHTML = '';
+
+  // пустые
+  for(let i=0;i<blanks;i++){ const e=document.createElement('div'); e.className='cell muted'; calDays.appendChild(e); }
+  // дни
+  for(let d=1; d<=count; d++){
+    const dt = new Date(y,m,d);
+    const iso = toISO(dt);
+    const isAllowed = currentAvail.dates.has(iso);
+    const inRange = dt>=new Date(today.getFullYear(),today.getMonth(),today.getDate()) && dt<=springEnd;
+    const e=document.createElement('div');
+    e.className = 'cell' + (isAllowed&&inRange?' dot':' muted') + (state.date===iso?' sel':'');
+    e.textContent = d;
+    e.onclick = ()=>{
+      if (!(isAllowed&&inRange)) return;
+      state.date=iso; state.time=null;
+      renderCalendar(); renderTimes();
+      validateNext();
     };
+    calDays.appendChild(e);
+  }
+  renderTimes();
+}
 
-    // ====== UI state ======
-    const RU_MONTHS = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
-    const DOW = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const years = [currentYear, currentYear+1, currentYear+2];
+function renderTimes(){
+  timesWrap.innerHTML='';
+  if (!state.date){ return; }
+  const svc = state.service;
+  const times = svc.time; // массив строк HH:MM
+  currentAvail.times = times;
+  times.forEach(t=>{
+    const b=document.createElement('div');
+    b.className='tt' + (state.time===t?' sel':'');
+    b.textContent=t;
+    b.onclick=()=>{ state.time=t; document.querySelectorAll('.tt').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); updateDepositView(); validateNext(); };
+    timesWrap.appendChild(b);
+  });
+}
 
-    const sel = { y: currentYear, m: now.getMonth(), d: null, tour: null };
+function ensureCalendar(){
+  if (!state.service){ return; }
+  setupStep2();
+}
 
-    // DOM
-    const monthEl = document.getElementById('month');
-    const yearEl  = document.getElementById('year');
-    const mPrev   = document.getElementById('m-prev');
-    const mNext   = document.getElementById('m-next');
-    const yPrev   = document.getElementById('y-prev');
-    const yNext   = document.getElementById('y-next');
-    const wrapMonth = document.getElementById('wrap-month');
-    const wrapYear  = document.getElementById('wrap-year');
-    const dowEl   = document.getElementById('dow');
-    const daysEl  = document.getElementById('days');
-    const byDateTitle = document.getElementById('byDateTitle');
-    const byDate  = document.getElementById('byDate');
-    const allTours= document.getElementById('allTours');
-    const btn     = document.getElementById('submit');
+// ---------- counters ----------
+function setupCounters(){
+  function toInt(el){ const v = parseInt(el.value.replace(/\D/g,''),10); return isNaN(v)?0:clamp(v,0,99); }
+  function sync(){ aNum.value = toInt(aNum); cNum.value = toInt(cNum); state.adults=toInt(aNum); state.children=toInt(cNum); updateDepositView(); }
+  aInc.onclick = ()=>{ aNum.value = toInt(aNum)+1; sync(); };
+  aDec.onclick = ()=>{ aNum.value = Math.max(1,toInt(aNum)-1); sync(); };
+  cInc.onclick = ()=>{ cNum.value = toInt(cNum)+1; sync(); };
+  cDec.onclick = ()=>{ cNum.value = Math.max(0,toInt(cNum)-1); sync(); };
+  aNum.oninput = cNum.oninput = sync; sync();
+}
 
-    // ====== helpers ======
-    const pad = n => String(n).padStart(2,'0');
-    const toISO = (y,m,d)=> new Date(Date.UTC(y,m,d)).toISOString().slice(0,10);
-    const daysInMonth = (y,m)=> new Date(y, m+1, 0).getDate();
-    const firstWeekdayIndex = (y,m)=> (new Date(y,m,1).getDay()+6)%7; // Пн=0..Вс=6
+// ---------- STEP 3: контакты ----------
+nameEl.oninput = phoneEl.oninput = emailEl.oninput = ()=>{
+  state.name = nameEl.value.trim();
+  state.phone = phoneEl.value.trim();
+  state.email = emailEl.value.trim();
+  validateNext();
+};
 
-    function bindFocusWrap(select, wrap){
-      select.addEventListener('focus', ()=>wrap.classList.add('focus'));
-      select.addEventListener('blur',  ()=>wrap.classList.remove('focus'));
-      select.addEventListener('change',()=>wrap.classList.remove('focus'));
-    }
+// ---------- STEP 4: summary ----------
+function renderSummary(){
+  const isOne = state.service.type==='oneday';
+  const deposit = isOne ? DEPOSIT_ONE_DAY * (state.adults+state.children) : DEPOSIT_MULTI;
+  summaryBox.innerHTML = `
+    <div><b>Тур:</b> ${state.service.name}</div>
+    <div><b>Дата и время:</b> ${state.date} • ${state.time}</div>
+    <div><b>Состав:</b> ${state.adults} взр${state.children?`, ${state.children} реб`:''}</div>
+    <div><b>Контакты:</b> ${state.name}, ${state.phone}${state.email?`, ${state.email}`:''}</div>
+    <div><b>Предоплата:</b> ${deposit.toLocaleString('ru-RU')} ₽ (${isOne?'однодневный тур — 3000 ₽/чел':'многодневный тур — 10 000 ₽'})</div>
+    <div><b>Оплата:</b> СБП (Альфабанк)</div>
+    <div class="muted" style="margin-top:6px">Менеджер: @${MANAGER_USERNAME} • Рабочий чат: ${MANAGER_CHAT_LINK}</div>
+  `;
+}
 
-    function renderDOW(){
-      dowEl.innerHTML = "";
-      DOW.forEach(n=>{
-        const div = document.createElement('div');
-        div.className = 'dow';
-        div.textContent = n;
-        dowEl.appendChild(div);
-      });
-    }
-    function fillSelects(){
-      monthEl.innerHTML = RU_MONTHS.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
-      yearEl.innerHTML  = years.map(y=>`<option value="${y}">${y}</option>`).join('');
-      monthEl.value = sel.m; yearEl.value = sel.y;
-    }
+// ---------- Отправка в бота ----------
+function submitBooking(){
+  const isOne = state.service.type==='oneday';
+  const deposit = isOne ? DEPOSIT_ONE_DAY * (state.adults+state.children) : DEPOSIT_MULTI;
 
-    // ====== availability indexes ======
-    let TOURS = [], DATE_MAP = new Map(), TOUR_MAP = new Map();
-    function buildIndexes(src){
-      TOURS = src.tours;
-      DATE_MAP = new Map();  // dateISO -> Map(tourId -> slots)
-      TOUR_MAP = new Map();  // tourId  -> Set(dateISO)
+  const payload = {
+    source: 'webapp_yclients_v1',
+    manager_username: MANAGER_USERNAME,
+    manager_chat_link: MANAGER_CHAT_LINK,
+    tour_id: state.service.id,
+    tour_name: state.service.name,
+    type: state.service.type,
+    duration_days: state.service.durationDays || 1,
+    date: state.date,
+    time: state.time,
+    pax: { adults: state.adults, children: state.children },
+    contact: { name: state.name, phone: state.phone, email: state.email || null },
+    capacity_total: CAPACITY,
+    deposit_type: isOne ? 'oneday' : 'multiday',
+    deposit_amount: deposit,
+    payment_method: 'СБП (Альфабанк)'
+  };
+  tg.sendData(JSON.stringify(payload));
+  // Дополнительно можно закрыть WebApp:
+  // tg.close(); // раскомментируйте, если надо закрывать окно сразу
+}
 
-      src.availability.forEach(({date, tour, slots})=>{
-        if (!DATE_MAP.has(date)) DATE_MAP.set(date, new Map());
-        DATE_MAP.get(date).set(tour, slots);
-
-        if (!TOUR_MAP.has(tour)) TOUR_MAP.set(tour, new Set());
-        TOUR_MAP.get(tour).add(date);
-      });
-    }
-
-    function datesForTour(tourId){ return TOUR_MAP.get(tourId) || new Set(); }
-    function toursForDate(dateISO){ return DATE_MAP.get(dateISO) || new Map(); }
-
-    // ====== render calendar ======
-    function renderDays(){
-      daysEl.innerHTML = "";
-      const y = +yearEl.value, m = +monthEl.value;
-      const blanks = firstWeekdayIndex(y,m);
-      const count = daysInMonth(y,m);
-      const allowed = sel.tour ? datesForTour(sel.tour) : null;
-
-      // пустые
-      for(let i=0;i<blanks;i++){
-        const e = document.createElement('div'); e.className='day empty'; daysEl.appendChild(e);
-      }
-      // дни
-      for(let d=1; d<=count; d++){
-        const iso = `${y}-${pad(m+1)}-${pad(d)}`;
-        const offersMap = toursForDate(iso);
-        const hasOffer = offersMap.size>0;
-        const allowedHere = !sel.tour || (allowed && allowed.has(iso));
-        const e = document.createElement('div');
-        e.className = 'day' + (hasOffer ? ' hasOffer':'')
-                            + (allowedHere ? '' : ' disabled')
-                            + (sel.y===y && sel.m===m && sel.d===d ? ' selected':'');
-        e.textContent = d;
-
-        e.onclick = ()=>{
-          if (!allowedHere) return;
-          sel.y=y; sel.m=m; sel.d=d;
-          Array.from(daysEl.children).forEach(c=>c.classList.remove('selected'));
-          e.classList.add('selected');
-          renderByDate(); updateSubmitState();
-        };
-        daysEl.appendChild(e);
-      }
-      renderByDate(); // чтобы список туров за день всегда синхронно обновлялся
-    }
-
-    // туры доступные в выбранный день
-    function renderByDate(){
-      const hasDate = sel.d != null;
-      byDateTitle.style.display = hasDate ? '' : 'none';
-      byDate.innerHTML = "";
-      if (!hasDate) return;
-
-      const iso = toISO(sel.y, sel.m, sel.d);
-      const offers = toursForDate(iso); // Map(tourId -> slots)
-      if (offers.size === 0){
-        const div = document.createElement('div');
-        div.className='muted';
-        div.textContent = 'В этот день туров нет';
-        byDate.appendChild(div);
-        return;
-      }
-      TOURS.forEach(t=>{
-        if (!offers.has(t.id)) return;
-        const slots = offers.get(t.id);
-        const chip = document.createElement('div');
-        chip.className = 'chip' + (sel.tour===t.id ? ' selected':'' );
-        chip.innerHTML = `${t.name}<small>• мест: ${slots}</small>`;
-        chip.onclick = ()=>{ sel.tour = t.id; renderAllTours(); renderDays(); updateSubmitState(); };
-        byDate.appendChild(chip);
-      });
-    }
-
-    // полный список туров (для фильтра календаря)
-    function renderAllTours(){
-      allTours.innerHTML = "";
-      TOURS.forEach(t=>{
-        const dates = datesForTour(t.id);
-        const cnt = dates.size;
-        const chip = document.createElement('div');
-        chip.className = 'chip' + (sel.tour===t.id ? ' selected':'' );
-        chip.innerHTML = `${t.name}<small>• дат: ${cnt}</small>`;
-        chip.onclick = ()=>{
-          sel.tour = (sel.tour===t.id ? null : t.id); // переключатель
-          renderAllTours(); renderDays(); updateSubmitState();
-        };
-        allTours.appendChild(chip);
-      });
-    }
-
-    // ====== navigation ======
-    function shiftMonth(delta){
-      let y = Number(yearEl.value);
-      let m = Number(monthEl.value) + delta;
-      if (m<0){ m=11; y--; }
-      if (m>11){ m=0;  y++; }
-      const minY=years[0], maxY=years[years.length-1];
-      if (y<minY){ y=minY; m=0; }
-      if (y>maxY){ y=maxY; m=11; }
-      yearEl.value=y; monthEl.value=m; sel.d=null; renderDays(); updateSubmitState();
-    }
-    function shiftYear(delta){
-      let y = Number(yearEl.value) + delta;
-      const minY=years[0], maxY=years[years.length-1];
-      if (y<minY) y=minY;
-      if (y>maxY) y=maxY;
-      yearEl.value=y; sel.d=null; renderDays(); updateSubmitState();
-    }
-
-    // ====== submit ======
-    function updateSubmitState(){
-      const ready = sel.d!=null && !!sel.tour;
-      btn.disabled = !ready;
-    }
-    btn.onclick = ()=>{
-      if (btn.disabled) return;
-      const iso = toISO(sel.y, sel.m, sel.d);
-      tg.sendData(JSON.stringify({ date: iso, tour: sel.tour }));
-    };
-
-    // ====== boot ======
-    async function boot(){
-      bindFocusWrap(monthEl, wrapMonth);
-      bindFocusWrap(yearEl,  wrapYear);
-
-      // данные
-      let src = DEMO;
-      if (AVAIL_URL){
-        try {
-          const r = await fetch(AVAIL_URL, {cache:'no-store'});
-          src = await r.json();
-        } catch(e){ console.warn('Не удалось загрузить данные, использую DEMO', e); }
-      }
-      buildIndexes(src);
-
-      // UI
-      renderDOW(); fillSelects(); renderAllTours();
-      monthEl.onchange=()=>{ sel.d=null; renderDays(); updateSubmitState(); };
-      yearEl.onchange =()=>{ sel.d=null; renderDays(); updateSubmitState(); };
-      mPrev.onclick=()=>shiftMonth(-1); mNext.onclick=()=>shiftMonth(1);
-      yPrev.onclick=()=>shiftYear(-1);  yNext.onclick=()=>shiftYear(1);
-
-      renderDays(); updateSubmitState();
-    }
-    boot();
-  </script>
+// ---------- Старт ----------
+renderServices();
+setStep(1);
+</script>
 </body>
 </html>
